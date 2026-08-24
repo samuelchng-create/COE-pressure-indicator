@@ -28,6 +28,12 @@ def main() -> None:
         raise ValueError("metrics do not contain the required paired models")
     if predictions.duplicated(["category", "tender_id"]).any():
         raise ValueError("predictions contain duplicate category/tender rows")
+    if features.iloc[0]["tender_id"] != "2015-10-1":
+        raise ValueError("economic feature history must begin at the October 2015 boundary")
+    if not metrics["economy_model_version"].str.contains("post-2015", regex=False).all():
+        raise ValueError("metrics are not labelled with the post-2015 model version")
+    if (predictions["tender_id"].str.slice(0, 7) < "2015-10").any():
+        raise ValueError("predictions contain pre-October-2015 tenders")
     expected_source_ids = {"DEXSIUS", "VIXCLS", "DGS10", "DCOILBRENTEU", "NASDAQCOM", "M015631", "M213781", "M182342"}
     if set(manifest["source_id"]) != expected_source_ids:
         raise ValueError("source manifest is incomplete")

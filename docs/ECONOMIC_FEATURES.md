@@ -1,5 +1,8 @@
 # Economy and financial-market feature dataset
 
+The materialized dataset starts in October 2015 to match the common COE model
+analysis boundary.
+
 ## Variables
 
 | Feature | Interpretation | Historical availability rule |

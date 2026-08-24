@@ -34,6 +34,17 @@ def test_prepare_parses_thousands_separators():
     assert data["bids_received"].notna().all()
 
 
+def test_prepare_enforces_october_2015_analysis_start():
+    records = synthetic_records(4)
+    for row in records[:10]:
+        row["month"] = "2015-09"
+    for row in records[10:]:
+        row["month"] = "2015-10"
+    data = prepare_coe_data(records)
+    assert not data.empty
+    assert data["month"].min() == pd.Timestamp("2015-10-01")
+
+
 def test_outcome_features_do_not_use_current_tender_results():
     data = prepare_coe_data(synthetic_records(10))
     before = build_feature_frame(data, "Category A")

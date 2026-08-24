@@ -19,7 +19,7 @@ from economic_features import ECONOMIC_FEATURE_COLUMNS, validate_economic_featur
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "economic_financial_features.csv"
 MANIFEST = ROOT / "data" / "economic_financial_source_manifest.csv"
-START = pd.Timestamp("2002-01-01", tz="Asia/Singapore")
+START = pd.Timestamp("2015-10-01", tz="Asia/Singapore")
 RETRIEVED_AT = pd.Timestamp.now(tz="Asia/Singapore").floor("s")
 
 FRED_SERIES = {

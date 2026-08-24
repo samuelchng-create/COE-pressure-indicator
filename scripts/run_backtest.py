@@ -1,4 +1,4 @@
-"""Run and print the v0.2 back-test against the current official dataset."""
+"""Run the v0.5 post-October-2015 back-test against official data."""
 
 from pathlib import Path
 import sys

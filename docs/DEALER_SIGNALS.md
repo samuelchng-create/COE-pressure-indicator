@@ -71,7 +71,7 @@ Feature definitions and candidate models must be frozen before examining the
 final holdout period. If uplift is absent or unstable, publish that negative
 result and do not release calibrated weights or probabilities.
 
-## v0.3 archive result (collection cutoff 21 August 2026)
+## v0.5 post-policy rerun of the v0.3 archive (collection cutoff 21 August 2026)
 
 - 441 dated PDFs from six selected high-share brands were retrieved without a
   failed request; 1,458 PDF pages remain in the audit table.
@@ -79,14 +79,14 @@ result and do not release calibrated weights or probabilities.
   rules: 204 Cat A and 199 Cat B rows from BYD, Honda and Toyota. Premium-brand
   pages without an unambiguous category label remain context-only.
 - The paired dealer test contains 51 one-tender-ahead forecasts per category.
-- Cat A structural-plus-dealer MAE was S$3,336 versus S$3,528 structural-only,
-  a 5.45% improvement. RMSE improved 0.86%; direction accuracy was 60.8% versus
-  49.0%. The combined 80% interval covered 89.7% but was materially wider.
-- Cat B structural-plus-dealer MAE was S$4,631 versus S$4,250 structural-only,
-  an 8.97% deterioration. RMSE deteriorated 13.45%; direction accuracy was
-  49.0% versus 51.0%.
+- Cat A structural-plus-dealer MAE was S$3,203 versus S$3,327 structural-only,
+  a 3.73% improvement. RMSE deteriorated 0.41%; direction accuracy was 66.7%
+  versus 68.6%. The combined 80% interval covered 89.7% but was materially wider.
+- Cat B structural-plus-dealer MAE was S$4,800 versus S$4,348 structural-only,
+  a 10.37% deterioration. RMSE deteriorated 14.91%; direction accuracy was
+  47.1% versus 51.0%.
 
-The Cat A result is retrospective evidence, not a calibrated forecasting edge;
+The Cat A MAE result is retrospective evidence, not a calibrated forecasting edge;
 the Cat B result is negative. Neither supports publishing a composite Dealer
 Pressure Index or probabilities. A prospectively frozen dealer archive is the
 next validation stage.

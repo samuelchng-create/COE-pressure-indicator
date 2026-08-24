@@ -22,8 +22,10 @@ from economic_features import ECONOMIC_MODEL_VERSION, merge_economic_features
 
 
 CATEGORIES = ("Category A", "Category B", "Category D")
-MODEL_VERSION = "v0.2-structural-ridge-change-1"
+ANALYSIS_START = pd.Timestamp("2015-10-01")
+MODEL_VERSION = "v0.5-structural-ridge-change-post-2015-1"
 FEATURE_AVAILABILITY = {
+    "analysis window": "Only tenders from October 2015 onward enter training, validation and charts.",
     "announced_quota": "Known before the target tender opens.",
     "announced_cat_e_quota": "Known before the target tender opens.",
     "premium/bid/excess-demand/momentum": "Lagged by at least one completed tender.",
@@ -59,6 +61,7 @@ def prepare_coe_data(records: Iterable[dict] | pd.DataFrame) -> pd.DataFrame:
             frame[column] = _clean_number(frame[column])
     frame["month"] = pd.to_datetime(frame["month"], format="%Y-%m", errors="coerce")
     frame = frame.dropna(subset=list(REQUIRED_COLUMNS)).copy()
+    frame = frame[frame["month"] >= ANALYSIS_START].copy()
     frame["bidding_no"] = frame["bidding_no"].astype(int)
     frame = frame[frame["bidding_no"].isin([1, 2])]
     frame["tender_id"] = (

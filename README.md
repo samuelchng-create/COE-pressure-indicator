@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.2 structural + v0.3 dealer + v0.4 economy experiment
+# Singapore COE Pressure Indicator — v0.5 post-policy comparison
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -7,6 +7,10 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is calibrated. Negative benchmark results remain visible.
+
+Every chart, training window, tuning fold, uncertainty interval and benchmark
+now uses a common October 2015 analysis start. Earlier tenders are excluded to
+avoid mixing materially different policy regimes into the reported results.
 
 ## v0.3 SGCarMart dealer archive
 
@@ -33,10 +37,10 @@ forecast edge is calibrated. Negative benchmark results remain visible.
 
 The frozen v0.3 archive contains 441 source PDFs, 1,458 auditable page rows and
 403 model-eligible observations. Over 51 paired forecasts per category, dealer
-signals improved Cat A MAE by 5.45% but worsened Cat B MAE by 8.97%. The app
+signals improved Cat A MAE by 3.73% but worsened Cat B MAE by 10.37%. The app
 shows both results and does not treat the Cat A result as calibrated.
 
-## v0.4 economy and financial-markets experiment
+## v0.5 economy and financial-markets experiment
 
 - Adds 13 tender-aligned variables: SGD/USD level and 21-day change, VIX level
   and change, US 10-year Treasury yield and change, Brent price and return,
@@ -45,15 +49,15 @@ shows both results and does not treat the Cat A result as calibrated.
 - Treats daily market observations as available in Singapore only on the next
   calendar day. Monthly CPI uses a 45-day publication buffer; quarterly GDP
   and unemployment use 75 days.
-- Runs a paired expanding-window comparison at the same 331 forecast origins
-  per category. The full block worsened MAE by 0.43% for Cat A, 0.30% for Cat B
-  and 2.14% for Cat D, so it is visible in the app but is not promoted over the
-  structural model.
+- Runs a paired expanding-window comparison at the same 193 forecast origins
+  per category. The full block improved MAE by only 0.08% for Cat A and 0.36%
+  for Cat B, while worsening Cat D by 5.52%. The mixed, marginal result remains
+  visible but is not promoted over the structural model.
 - Uses current-vintage SingStat macro tables. The publication buffers prevent
   use of the current period too early, but historical revisions remain a known
   limitation until a real-time vintage archive is obtained.
 
-## v0.2 structural method
+## v0.5 structural method
 
 - Predicts the next tender's premium change separately by category.
 - Uses lagged premiums, momentum, lagged bid-to-quota/excess demand, announced
@@ -67,6 +71,10 @@ shows both results and does not treat the Cat A result as calibrated.
   persistence.
 - Builds 80% prequential conformal intervals from earlier out-of-sample errors
   only.
+
+Across 193 post-policy forecasts, structural MAE is S$2,844 for Cat A, S$3,933
+for Cat B and S$427 for Cat D. It beats the best naïve MAE by 5.45% for Cat A
+and 1.22% for Cat B, but trails it by 4.84% for Cat D.
 
 See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and
 [docs/DEALER_SIGNALS.md](docs/DEALER_SIGNALS.md), plus

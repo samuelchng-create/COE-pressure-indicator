@@ -5,6 +5,7 @@ import requests
 import streamlit as st
 
 from coe_model import (
+    ANALYSIS_START,
     CATEGORIES,
     FEATURE_AVAILABILITY,
     MODEL_VERSION,
@@ -24,7 +25,7 @@ from economic_features import (
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.2 structural model + v0.3 dealer archive + v0.4 economy/markets experiment • "
+    f"v0.5 post-policy comparison: structural + dealer archive + economy/markets • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -49,6 +50,11 @@ try:
 except Exception as error:
     st.error(f"Could not load or validate the official data.gov.sg dataset: {error}")
     st.stop()
+
+st.info(
+    f"Comparable analysis window: {ANALYSIS_START:%B %Y} onward. "
+    "Earlier tenders are excluded from charts, training, tuning, intervals and benchmark metrics."
+)
 
 tabs = st.tabs([*CATEGORIES, "Dealer-signal experiment", "Economy & markets", "Methodology & audit"])
 
@@ -200,7 +206,7 @@ Dealer features are accepted only when source URL, observation time, evidenced a
 with tabs[4]:
     st.subheader("Economic and financial-market variables")
     st.write(
-        "The candidate v0.4 model adds Singapore growth, inflation and unemployment plus "
+        "The candidate v0.5 economy model adds Singapore growth, inflation and unemployment plus "
         "SGD/USD, global equities, market volatility, long-term interest rates and Brent oil. The existing "
         "structural forecast remains primary unless the augmented model improves frozen out-of-sample results."
     )
@@ -245,11 +251,17 @@ with tabs[4]:
                 c2.metric("Economy-model MAE", f"S${row.MAE:,.0f}")
                 c3.metric("MAE vs structural", f"{row.MAE_improvement_vs_structural:+.1%}")
                 c4.metric("Direction accuracy", f"{row.direction_accuracy:.1%}")
-            if (economy_model["MAE_improvement_vs_structural"] <= 0).all():
-                st.warning(
-                    "The full economy/markets block worsened MAE for all three categories in this historical test. "
-                    "The variables are retained for research, but v0.4 is not promoted as the primary forecast."
-                )
+                if row.MAE_improvement_vs_structural <= 0:
+                    st.warning(f"For {row.category}, the economy/markets block worsened MAE. No edge is claimed.")
+                elif row.MAE_improvement_vs_structural < 0.01:
+                    st.info(
+                        f"For {row.category}, MAE improved by less than 1%. This is treated as marginal, "
+                        "not as a reliable forecasting edge."
+                    )
+            st.caption(
+                "The post-October-2015 result is mixed and small for Cat A/B, while Cat D deteriorates. "
+                "The primary forecast therefore remains structural-only."
+            )
             st.dataframe(economic_metrics, hide_index=True, width="stretch")
     if source_manifest_path.exists():
         with st.expander("Sources and historical availability rules"):
@@ -260,9 +272,10 @@ with tabs[4]:
     )
 
 with tabs[5]:
-    st.subheader("v0.2 audit trail")
+    st.subheader("v0.5 post-policy audit trail")
     st.markdown(
         f"""
+- **Common analysis boundary:** all charts, model fitting, tuning, intervals and benchmark metrics start in October 2015. Pre-October-2015 tenders are excluded for policy-regime reliability and comparability.
 - **Fixed parsing defect:** official values containing commas were previously coerced to missing values, causing recent charts and results to be unreliable.
 - **Target:** one-tender-ahead change in COE premium, modelled separately for Categories A, B and D.
 - **Validation:** expanding walk-forward evaluation with a minimum 60-tender training window. Ridge regularization is selected inside each training window using time-ordered inner folds.
@@ -270,7 +283,7 @@ with tabs[5]:
 - **Uncertainty:** an 80% prequential conformal interval based only on absolute errors from earlier out-of-sample forecasts. Coverage is empirical, not guaranteed prospectively.
 - **No current-tender outcome leakage:** premiums, bids, bid-to-quota ratios, excess demand, momentum and Cat E outcome signals are lagged by at least one completed tender.
 - **Announced supply assumption:** current-tender category and Cat E quotas are treated as known before bidding. The results dataset lacks publication timestamps, so future frozen forecasts should archive the corresponding LTA announcement.
-- **No calibrated Dealer Pressure Index:** no arbitrary composite weights or probabilities are published in v0.2.
+- **No calibrated Dealer Pressure Index:** no arbitrary composite weights or probabilities are published.
 - **Dealer archive reconstruction:** date-only SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date; the later research retrieval timestamp and PDF checksum remain recorded for audit.
 - **Dealer-model eligibility:** only explicitly labelled Cat A/B pages with extracted advertised prices enter the incremental test. Unclassified pages remain visible for review; Cat D has no SGCarMart car-price-list dealer signal.
 - **Economy/markets experiment:** the candidate model adds 13 as-of variables under `{ECONOMIC_MODEL_VERSION}` and is evaluated at the same outer forecast origins as the structural model.

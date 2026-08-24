@@ -1,4 +1,13 @@
-# v0.2 structural methodology, v0.3 dealer and v0.4 economy experiments
+# v0.5 post-policy structural, dealer and economy methodology
+
+## Common analysis window
+
+All charts, structural features, expanding training windows, inner tuning
+folds, conformal calibration errors and benchmark metrics begin in October
+2015. No pre-October-2015 COE tender can enter any fitted model. The SGCarMart
+dealer archive begins in 2024, while its underlying structural forecast is
+trained only on the same post-policy COE window. Economic features are likewise
+materialized only from October 2015 onward.
 
 ## MVP audit findings
 
@@ -71,7 +80,7 @@ validation before any calibrated probability or dealer index is published.
 Date-only archive availability is assigned to end-of-day Singapore time, so a
 document dated on a tender opening day cannot enter that noon cutoff.
 
-## v0.4 economy and financial-markets contract
+## v0.5 economy and financial-markets contract
 
 The economy variant fits the same standardized Ridge change model with 13
 additional variables. Structural-only and augmented forecasts use identical
@@ -88,7 +97,8 @@ as available 75 days after quarter-end.
 
 These macro rules are conservative publication buffers, not reconstructed
 release timestamps. SingStat serves current-vintage data that may contain later
-revisions. Therefore the v0.4 results are a revision-risk sensitivity test, not
-a fully vintage-correct real-time back-test. The first paired test covered 331
-forecasts per category and worsened MAE for Cat A, B and D, so v0.4 remains a
-visible research candidate rather than the deployed primary model.
+revisions. Therefore the economy results are a revision-risk sensitivity test, not
+a fully vintage-correct real-time back-test. The post-policy paired test covers
+193 forecasts per category. MAE improves by only 0.08% for Cat A and 0.36% for
+Cat B, while worsening 5.52% for Cat D. This mixed, marginal result leaves the
+variant as a visible research candidate rather than the deployed primary model.

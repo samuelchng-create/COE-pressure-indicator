@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-ECONOMIC_MODEL_VERSION = "v0.4-structural-economy-ridge-change-1"
+ECONOMIC_MODEL_VERSION = "v0.5-structural-economy-ridge-change-post-2015-1"
 ECONOMIC_FEATURE_AVAILABILITY = {
     "daily FX, volatility, rates and oil": "Observation date plus one calendar day, noon Singapore time.",
     "market changes": "Latest as-of value versus the latest value at least 30 calendar days earlier.",

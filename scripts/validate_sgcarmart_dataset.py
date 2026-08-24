@@ -35,6 +35,7 @@ def main() -> None:
     metrics = pd.read_csv(ROOT / "data" / "dealer_backtest_metrics.csv")
     assert set(metrics["category"]) == {"Category A", "Category B"}
     assert set(metrics["model"]) == {"structural", "structural_plus_dealer", "persistence"}
+    assert metrics["dealer_model_version"].str.contains("post-2015", regex=False).all()
     assert len(metrics) == 6
     print(
         f"validated {len(validated)} dealer observations, {len(manifest)} source PDFs and {len(metrics)} metric rows"
