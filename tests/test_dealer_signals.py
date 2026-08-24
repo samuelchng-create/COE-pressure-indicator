@@ -9,6 +9,7 @@ def observations() -> pd.DataFrame:
             {
                 "observation_id": "one",
                 "observed_at": "2026-08-01T00:00:00Z",
+                "available_at": "2026-08-01T00:00:00Z",
                 "retrieved_at": "2026-08-01T01:00:00Z",
                 "source_url": "https://example.test/one",
                 "category": "Category A",
@@ -22,6 +23,7 @@ def observations() -> pd.DataFrame:
             {
                 "observation_id": "future",
                 "observed_at": "2026-08-20T00:00:00Z",
+                "available_at": "2026-08-20T00:00:00Z",
                 "retrieved_at": "2026-08-20T01:00:00Z",
                 "source_url": "https://example.test/future",
                 "category": "Category A",
@@ -45,8 +47,17 @@ def test_validator_and_cutoff_exclude_future_observations():
     assert features["weighted_price_change"] == -2000
 
 
-def test_retrieval_before_observation_is_rejected():
+def test_retrieval_before_availability_is_rejected():
     frame = observations().iloc[[0]].copy()
     frame.loc[:, "retrieved_at"] = "2026-07-31T00:00:00Z"
     _, errors = validate_dealer_observations(frame)
     assert any("cannot precede" in error for error in errors)
+
+
+def test_dated_archive_availability_can_precede_research_retrieval():
+    frame = observations().iloc[[0]].copy()
+    frame.loc[:, "retrieved_at"] = "2026-08-24T00:00:00Z"
+    validated, errors = validate_dealer_observations(frame)
+    assert errors == []
+    features = aggregate_before_cutoff(validated, "Category A", pd.Timestamp("2026-08-10T00:00:00Z"))
+    assert features["dealer_observation_count"] == 1

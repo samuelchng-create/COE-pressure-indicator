@@ -1,0 +1,187 @@
+observation_month,brand,lta_make,trailing_12m_start,trailing_12m_end,brand_registrations,all_make_registrations,market_share_weight,source_url
+2024-01,BYD,BYD,2023-01,2023-12,1416.0,30225.0,0.04684863523573201,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-01,Toyota,TOYOTA,2023-01,2023-12,7248.0,30225.0,0.2398014888337469,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-01,Mercedes-Benz,MERCEDES BENZ,2023-01,2023-12,4317.0,30225.0,0.1428287841191067,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-01,BMW,B.M.W.,2023-01,2023-12,3436.0,30225.0,0.11368072787427626,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-01,Honda,HONDA,2023-01,2023-12,2631.0,30225.0,0.08704714640198512,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-01,Tesla,TESLA,2023-01,2023-12,941.0,30225.0,0.031133167907361457,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-02,BYD,BYD,2023-02,2024-01,1629.0,30577.0,0.05327533767210649,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-02,Toyota,TOYOTA,2023-02,2024-01,7231.0,30577.0,0.23648493966052916,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-02,Mercedes-Benz,MERCEDES BENZ,2023-02,2024-01,4332.0,30577.0,0.14167511528272886,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-02,BMW,B.M.W.,2023-02,2024-01,3638.0,30577.0,0.11897831703568042,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-02,Honda,HONDA,2023-02,2024-01,2606.0,30577.0,0.0852274585472741,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-02,Tesla,TESLA,2023-02,2024-01,1015.0,30577.0,0.03319488504431435,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-03,BYD,BYD,2023-03,2024-02,2016.0,30855.0,0.06533787068546427,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-03,Toyota,TOYOTA,2023-03,2024-02,7199.0,30855.0,0.23331712850429429,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-03,Mercedes-Benz,MERCEDES BENZ,2023-03,2024-02,4377.0,30855.0,0.14185707340787554,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-03,BMW,B.M.W.,2023-03,2024-02,3711.0,30855.0,0.1202722411278561,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-03,Honda,HONDA,2023-03,2024-02,2583.0,30855.0,0.0837141468157511,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-03,Tesla,TESLA,2023-03,2024-02,985.0,30855.0,0.031923513206935664,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-04,BYD,BYD,2023-04,2024-03,2488.0,31894.0,0.07800840283438891,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-04,Toyota,TOYOTA,2023-04,2024-03,7220.0,31894.0,0.22637486674609644,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-04,Mercedes-Benz,MERCEDES BENZ,2023-04,2024-03,4435.0,31894.0,0.13905436759265066,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-04,BMW,B.M.W.,2023-04,2024-03,3822.0,31894.0,0.11983445162099454,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-04,Honda,HONDA,2023-04,2024-03,2537.0,31894.0,0.07954474195773499,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-04,Tesla,TESLA,2023-04,2024-03,1124.0,31894.0,0.035241738257979556,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-05,BYD,BYD,2023-05,2024-04,2975.0,33161.0,0.08971382045173547,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-05,Toyota,TOYOTA,2023-05,2024-04,7453.0,33161.0,0.22475196767286873,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-05,Mercedes-Benz,MERCEDES BENZ,2023-05,2024-04,4370.0,33161.0,0.13178130936944,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-05,BMW,B.M.W.,2023-05,2024-04,3955.0,33161.0,0.11926660836524833,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-05,Honda,HONDA,2023-05,2024-04,2621.0,33161.0,0.0790386297156298,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-05,Tesla,TESLA,2023-05,2024-04,1201.0,33161.0,0.03621724314707035,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-06,BYD,BYD,2023-06,2024-05,3297.0,34135.0,0.09658708070894975,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-06,Toyota,TOYOTA,2023-06,2024-05,7488.0,34135.0,0.21936428885308334,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-06,Mercedes-Benz,MERCEDES BENZ,2023-06,2024-05,4427.0,34135.0,0.1296909330599092,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-06,BMW,B.M.W.,2023-06,2024-05,4032.0,34135.0,0.11811923245935257,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-06,Honda,HONDA,2023-06,2024-05,2736.0,34135.0,0.08015233631170353,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-06,Tesla,TESLA,2023-06,2024-05,1319.0,34135.0,0.03864069137249158,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-07,BYD,BYD,2023-07,2024-06,3640.0,35577.0,0.10231329229558422,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-07,Toyota,TOYOTA,2023-07,2024-06,7546.0,35577.0,0.21210332518199962,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-07,Mercedes-Benz,MERCEDES BENZ,2023-07,2024-06,4551.0,35577.0,0.12791972341681423,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-07,BMW,B.M.W.,2023-07,2024-06,4269.0,35577.0,0.11999325406863985,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-07,Honda,HONDA,2023-07,2024-06,2906.0,35577.0,0.08168198555246367,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-07,Tesla,TESLA,2023-07,2024-06,1510.0,35577.0,0.04244315147426708,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-08,BYD,BYD,2023-08,2024-07,4047.0,37112.0,0.10904828626859236,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-08,Toyota,TOYOTA,2023-08,2024-07,7615.0,37112.0,0.2051896960551843,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-08,Mercedes-Benz,MERCEDES BENZ,2023-08,2024-07,4747.0,37112.0,0.12791010993748653,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-08,BMW,B.M.W.,2023-08,2024-07,4373.0,37112.0,0.11783250700582022,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-08,Honda,HONDA,2023-08,2024-07,3238.0,37112.0,0.08724940719982754,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-08,Tesla,TESLA,2023-08,2024-07,1633.0,37112.0,0.04400194007329166,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-09,BYD,BYD,2023-09,2024-08,4420.0,38520.0,0.11474558670820353,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-09,Toyota,TOYOTA,2023-09,2024-08,7597.0,38520.0,0.19722222222222222,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-09,Mercedes-Benz,MERCEDES BENZ,2023-09,2024-08,4843.0,38520.0,0.12572689511941848,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-09,BMW,B.M.W.,2023-09,2024-08,4523.0,38520.0,0.11741952232606438,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-09,Honda,HONDA,2023-09,2024-08,3459.0,38520.0,0.08979750778816199,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-09,Tesla,TESLA,2023-09,2024-08,1807.0,38520.0,0.04691069574247144,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-10,BYD,BYD,2023-10,2024-09,4714.0,40234.0,0.11716458716508425,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-10,Toyota,TOYOTA,2023-10,2024-09,7732.0,40234.0,0.19217577173534822,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-10,Mercedes-Benz,MERCEDES BENZ,2023-10,2024-09,5019.0,40234.0,0.12474524034398768,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-10,BMW,B.M.W.,2023-10,2024-09,4589.0,40234.0,0.11405776209176319,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-10,Honda,HONDA,2023-10,2024-09,3721.0,40234.0,0.09248396878262166,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-10,Tesla,TESLA,2023-10,2024-09,2107.0,40234.0,0.05236864343589998,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-11,BYD,BYD,2023-11,2024-10,5068.0,41289.0,0.12274455666158057,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-11,Toyota,TOYOTA,2023-11,2024-10,7787.0,41289.0,0.1885974472619826,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-11,Mercedes-Benz,MERCEDES BENZ,2023-11,2024-10,5044.0,41289.0,0.12216328804282012,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-11,BMW,B.M.W.,2023-11,2024-10,4761.0,41289.0,0.11530916224660322,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-11,Honda,HONDA,2023-11,2024-10,3799.0,41289.0,0.09200997844462205,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-11,Tesla,TESLA,2023-11,2024-10,2110.0,41289.0,0.05110319939935576,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-12,BYD,BYD,2023-12,2024-11,5341.0,42354.0,0.1261037918496482,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-12,Toyota,TOYOTA,2023-12,2024-11,7860.0,42354.0,0.1855786938659867,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-12,Mercedes-Benz,MERCEDES BENZ,2023-12,2024-11,5104.0,42354.0,0.1205080984086509,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-12,BMW,B.M.W.,2023-12,2024-11,4899.0,42354.0,0.11566794163479246,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-12,Honda,HONDA,2023-12,2024-11,3932.0,42354.0,0.09283656797468952,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2024-12,Tesla,TESLA,2023-12,2024-11,2306.0,42354.0,0.05444586107569533,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-01,BYD,BYD,2024-01,2024-12,6191.0,43022.0,0.1439031193342941,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-01,Toyota,TOYOTA,2024-01,2024-12,7876.0,43022.0,0.18306912742317885,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-01,Mercedes-Benz,MERCEDES BENZ,2024-01,2024-12,5101.0,43022.0,0.11856724466551996,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-01,BMW,B.M.W.,2024-01,2024-12,5071.0,43022.0,0.11786992701408582,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-01,Honda,HONDA,2024-01,2024-12,3892.0,43022.0,0.09046534331272373,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-01,Tesla,TESLA,2024-01,2024-12,2384.0,43022.0,0.055413509367300454,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-02,BYD,BYD,2024-02,2025-01,6495.0,43485.0,0.14936184891341842,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-02,Toyota,TOYOTA,2024-02,2025-01,7795.0,43485.0,0.1792572151316546,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-02,Mercedes-Benz,MERCEDES BENZ,2024-02,2025-01,5213.0,43485.0,0.11988041853512706,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-02,BMW,B.M.W.,2024-02,2025-01,5016.0,43485.0,0.11535012073128666,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-02,Honda,HONDA,2024-02,2025-01,3928.0,43485.0,0.09032999885017823,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-02,Tesla,TESLA,2024-02,2025-01,2280.0,43485.0,0.05243187305967575,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-03,BYD,BYD,2024-03,2025-02,6872.0,44949.0,0.15288438007519634,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-03,Toyota,TOYOTA,2024-03,2025-02,7869.0,44949.0,0.1750650737502503,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-03,Mercedes-Benz,MERCEDES BENZ,2024-03,2025-02,5270.0,44949.0,0.1172439876304256,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-03,BMW,B.M.W.,2024-03,2025-02,5118.0,44949.0,0.11386237736100914,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-03,Honda,HONDA,2024-03,2025-02,4071.0,44949.0,0.09056931188680505,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-03,Tesla,TESLA,2024-03,2025-02,2509.0,44949.0,0.05581881688135443,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-04,BYD,BYD,2024-04,2025-03,7178.0,45774.0,0.1568139118276751,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-04,Toyota,TOYOTA,2024-04,2025-03,7955.0,45774.0,0.17378861362345435,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-04,Mercedes-Benz,MERCEDES BENZ,2024-04,2025-03,5256.0,45774.0,0.11482500983090838,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-04,BMW,B.M.W.,2024-04,2025-03,5211.0,45774.0,0.11384191899331499,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-04,Honda,HONDA,2024-04,2025-03,4360.0,45774.0,0.09525057893127102,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-04,Tesla,TESLA,2024-04,2025-03,2449.0,45774.0,0.05350198802813824,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-05,BYD,BYD,2024-05,2025-04,7389.0,46271.0,0.159689654427179,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-05,Toyota,TOYOTA,2024-05,2025-04,7927.0,46271.0,0.17131680750361997,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-05,Mercedes-Benz,MERCEDES BENZ,2024-05,2025-04,5232.0,46271.0,0.1130729830779538,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-05,BMW,B.M.W.,2024-05,2025-04,5113.0,46271.0,0.11050117784357373,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-05,Honda,HONDA,2024-05,2025-04,4537.0,46271.0,0.09805277603682652,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-05,Tesla,TESLA,2024-05,2025-04,2466.0,46271.0,0.05329472023513648,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-06,BYD,BYD,2024-06,2025-05,7834.0,47538.0,0.16479448020530943,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-06,Toyota,TOYOTA,2024-06,2025-05,8029.0,47538.0,0.16889646177794607,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-06,Mercedes-Benz,MERCEDES BENZ,2024-06,2025-05,5231.0,47538.0,0.1100382851613446,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-06,BMW,B.M.W.,2024-06,2025-05,5240.0,47538.0,0.11022760738777398,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-06,Honda,HONDA,2024-06,2025-05,4640.0,47538.0,0.09760612562581514,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-06,Tesla,TESLA,2024-06,2025-05,2670.0,47538.0,0.0561655938407169,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-07,BYD,BYD,2024-07,2025-06,8271.0,48403.0,0.17087783815052787,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-07,Toyota,TOYOTA,2024-07,2025-06,8172.0,48403.0,0.16883251038158792,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-07,Mercedes-Benz,MERCEDES BENZ,2024-07,2025-06,5175.0,48403.0,0.10691486064913332,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-07,BMW,B.M.W.,2024-07,2025-06,5212.0,48403.0,0.10767927607792906,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-07,Honda,HONDA,2024-07,2025-06,4653.0,48403.0,0.09613040514017726,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-07,Tesla,TESLA,2024-07,2025-06,2834.0,48403.0,0.05855008987046258,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-08,BYD,BYD,2024-08,2025-07,8633.0,49112.0,0.17578188630070044,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-08,Toyota,TOYOTA,2024-08,2025-07,8247.0,49112.0,0.1679223000488679,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-08,Mercedes-Benz,MERCEDES BENZ,2024-08,2025-07,5170.0,49112.0,0.10526958788076234,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-08,BMW,B.M.W.,2024-08,2025-07,5256.0,49112.0,0.1070206874083727,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-08,Honda,HONDA,2024-08,2025-07,4615.0,49112.0,0.09396888744095129,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-08,Tesla,TESLA,2024-08,2025-07,2920.0,49112.0,0.05945593744909594,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-09,BYD,BYD,2024-09,2025-08,9049.0,49813.0,0.18165940617910986,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-09,Toyota,TOYOTA,2024-09,2025-08,8289.0,49813.0,0.1664023447694377,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-09,Mercedes-Benz,MERCEDES BENZ,2024-09,2025-08,5173.0,49813.0,0.10384839298978178,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-09,BMW,B.M.W.,2024-09,2025-08,5210.0,49813.0,0.10459117097946319,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-09,Honda,HONDA,2024-09,2025-08,4651.0,49813.0,0.09336920081103327,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-09,Tesla,TESLA,2024-09,2025-08,3070.0,49813.0,0.0616304980627547,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-10,BYD,BYD,2024-10,2025-09,9616.0,50392.0,0.19082394030798538,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-10,Toyota,TOYOTA,2024-10,2025-09,8195.0,50392.0,0.16262501984441974,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-10,Mercedes-Benz,MERCEDES BENZ,2024-10,2025-09,4945.0,50392.0,0.09813065565962852,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-10,BMW,B.M.W.,2024-10,2025-09,5271.0,50392.0,0.1045999364978568,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-10,Honda,HONDA,2024-10,2025-09,4617.0,50392.0,0.09162168598190189,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-10,Tesla,TESLA,2024-10,2025-09,3070.0,50392.0,0.06092236862994126,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-11,BYD,BYD,2024-11,2025-10,10154.0,50941.0,0.19932863508765042,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-11,Toyota,TOYOTA,2024-11,2025-10,8014.0,50941.0,0.15731925168331992,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-11,Mercedes-Benz,MERCEDES BENZ,2024-11,2025-10,4876.0,50941.0,0.09571857639229697,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-11,BMW,B.M.W.,2024-11,2025-10,5147.0,50941.0,0.10103845625331266,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-11,Honda,HONDA,2024-11,2025-10,4705.0,50941.0,0.09236175183054907,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-11,Tesla,TESLA,2024-11,2025-10,3278.0,50941.0,0.06434895270999784,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-12,BYD,BYD,2024-12,2025-11,10746.0,51730.0,0.207732456988208,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-12,Toyota,TOYOTA,2024-12,2025-11,7851.0,51730.0,0.15176879953605257,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-12,Mercedes-Benz,MERCEDES BENZ,2024-12,2025-11,4874.0,51730.0,0.09421998840131451,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-12,BMW,B.M.W.,2024-12,2025-11,5070.0,51730.0,0.09800889232553645,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-12,Honda,HONDA,2024-12,2025-11,4753.0,51730.0,0.0918809201623816,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2025-12,Tesla,TESLA,2024-12,2025-11,3461.0,51730.0,0.06690508409046975,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-01,BYD,BYD,2025-01,2025-12,11184.0,52678.0,0.21230874368806713,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-01,Toyota,TOYOTA,2025-01,2025-12,7466.0,52678.0,0.14172899502638672,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-01,Mercedes-Benz,MERCEDES BENZ,2025-01,2025-12,4871.0,52678.0,0.09246744371464369,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-01,BMW,B.M.W.,2025-01,2025-12,5091.0,52678.0,0.09664376020350052,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-01,Honda,HONDA,2025-01,2025-12,4845.0,52678.0,0.09197387903868788,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-01,Tesla,TESLA,2025-01,2025-12,3476.0,52678.0,0.06598580052393789,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-02,BYD,BYD,2025-02,2026-01,11819.0,54241.0,0.21789790011246105,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-02,Toyota,TOYOTA,2025-02,2026-01,7832.0,54241.0,0.14439261813019671,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-02,Mercedes-Benz,MERCEDES BENZ,2025-02,2026-01,4692.0,54241.0,0.08650282996257444,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-02,BMW,B.M.W.,2025-02,2026-01,4982.0,54241.0,0.09184933906085803,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-02,Honda,HONDA,2025-02,2026-01,4847.0,54241.0,0.08936044689441566,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-02,Tesla,TESLA,2025-02,2026-01,3889.0,54241.0,0.07169853063180988,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-03,BYD,BYD,2025-03,2026-02,11906.0,54370.0,0.21898105572926246,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-03,Toyota,TOYOTA,2025-03,2026-02,8000.0,54370.0,0.14713996689350745,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-03,Mercedes-Benz,MERCEDES BENZ,2025-03,2026-02,4501.0,54370.0,0.08278462387345963,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-03,BMW,B.M.W.,2025-03,2026-02,4816.0,54370.0,0.08857826006989149,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-03,Honda,HONDA,2025-03,2026-02,4717.0,54370.0,0.08675740297958433,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-03,Tesla,TESLA,2025-03,2026-02,4112.0,54370.0,0.07562994298326282,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-04,BYD,BYD,2025-04,2026-03,12240.0,55086.0,0.2221980176451367,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-04,Toyota,TOYOTA,2025-04,2026-03,8005.0,55086.0,0.14531822967723196,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-04,Mercedes-Benz,MERCEDES BENZ,2025-04,2026-03,4353.0,55086.0,0.07902189303997385,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-04,BMW,B.M.W.,2025-04,2026-03,4599.0,55086.0,0.08348763751225356,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-04,Honda,HONDA,2025-04,2026-03,4463.0,55086.0,0.08101877064952982,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-04,Tesla,TESLA,2025-04,2026-03,4578.0,55086.0,0.08310641542315651,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-05,BYD,BYD,2025-05,2026-04,12821.0,55690.0,0.23022086550547674,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-05,Toyota,TOYOTA,2025-05,2026-04,7775.0,55690.0,0.13961213862452865,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-05,Mercedes-Benz,MERCEDES BENZ,2025-05,2026-04,4334.0,55690.0,0.07782366672652181,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-05,BMW,B.M.W.,2025-05,2026-04,4517.0,55690.0,0.08110971449093195,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-05,Honda,HONDA,2025-05,2026-04,4232.0,55690.0,0.07599209912012929,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-05,Tesla,TESLA,2025-05,2026-04,4624.0,55690.0,0.08303106482312803,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-06,BYD,BYD,2025-06,2026-05,13164.0,55713.0,0.23628237574713262,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-06,Toyota,TOYOTA,2025-06,2026-05,7700.0,55713.0,0.1382083176278427,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-06,Mercedes-Benz,MERCEDES BENZ,2025-06,2026-05,4152.0,55713.0,0.0745247967260783,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-06,BMW,B.M.W.,2025-06,2026-05,4279.0,55713.0,0.07680433651032972,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-06,Honda,HONDA,2025-06,2026-05,4003.0,55713.0,0.07185037603431874,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-06,Tesla,TESLA,2025-06,2026-05,4572.0,55713.0,0.08206343223305153,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-07,BYD,BYD,2025-07,2026-06,13345.0,55865.0,0.23887944151078494,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-07,Toyota,TOYOTA,2025-07,2026-06,7391.0,55865.0,0.13230108296786897,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-07,Mercedes-Benz,MERCEDES BENZ,2025-07,2026-06,4014.0,55865.0,0.07185178555446164,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-07,BMW,B.M.W.,2025-07,2026-06,4018.0,55865.0,0.07192338673588114,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-07,Honda,HONDA,2025-07,2026-06,3838.0,55865.0,0.06870133357200393,https://datamall.lta.gov.sg/content/datamall/en/static-data.html
+2026-07,Tesla,TESLA,2025-07,2026-06,4883.0,55865.0,0.0874071422178466,https://datamall.lta.gov.sg/content/datamall/en/static-data.html

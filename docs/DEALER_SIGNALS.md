@@ -2,11 +2,18 @@
 
 ## Observation grain and provenance
 
-One row is one observed dealer offer for a brand/model/variant at a point in
-time. `observed_at` is the time the offer was visibly effective;
-`retrieved_at` is the immutable capture time. Every row has a stable
-`observation_id` and `source_url`. Raw captures or hashes should be retained
-outside this repository so later corrections do not overwrite history.
+The SGCarMart v0.3 research row is a brand/category/page summary at a point in
+time, not a claim that every model and variant was normalized. `observed_at` is
+the dated price-list effective time; `available_at` is the evidence-based
+public availability time used for historical cutoffs; `retrieved_at` is the
+later immutable research capture time. Every row has a stable `observation_id`,
+source URL and PDF checksum. The source manifest preserves failed requests and
+retrieval timestamps.
+
+Because the archive supplies a document date rather than a precise publication
+time, `available_at` is conservatively set to 23:59:59 Singapore time on that
+date. A price list dated on a tender's opening day is therefore not treated as
+available at the noon forecast cutoff.
 
 The versioned CSV schema covers advertised and previous price, COE rebate,
 guaranteed-COE status/bid count/terms, finance/trade-in/cash/other incentives,
@@ -17,22 +24,35 @@ row has passed validation.
 
 ## Collection workflow
 
-1. Capture dealer pages, price lists, advertisements and roadshow offers on a
-   regular cadence. Record both observation and retrieval timestamps.
-2. Append; never revise a historical row in place. Corrections receive a new
+1. Enumerate SGCarMart's public authorised-dealer price-list archive and retain
+   all dated PDFs for the selected brands from 2024 through the collection
+   cutoff. Respect the site's crawl delay.
+2. OCR each page. Accept a page into the experiment only when it has an
+   explicit Cat A/B heading and at least one advertised price. Keep
+   unclassified pages as review/context rows.
+3. Summarize repeated advertised-price column values, explicit COE
+   package/rebate amounts, guaranteed/non-guaranteed bid terms, discounts,
+   finance/trade-in text and offer validity dates. Never impute missing terms.
+4. Record observation, evidenced availability and research retrieval
+   timestamps separately.
+5. Append; never revise a historical row in place. Corrections receive a new
    observation ID and an audit note.
-3. Validate required fields, category values, positive advertised prices,
+6. Validate required fields, category values, positive advertised prices,
    Boolean guaranteed-COE terms and non-negative market-share weights.
-4. Maintain a separate official tender schedule with `tender_id`, `category`,
+7. Maintain a separate official tender schedule with `tender_id`, `category`,
    `forecast_cutoff_at`, actual close time, quota announcement URL and release
    time.
-5. At each frozen forecast cutoff, aggregate only rows with `retrieved_at` and
-   `observed_at` no later than the cutoff, normally over a 21-day lookback.
-6. Store the resulting tender feature row and model version before the result is
+8. At each retrospective cutoff, aggregate only rows with `available_at` and
+   `observed_at` no later than the cutoff, over a declared lookback. The later
+   `retrieved_at` timestamp remains visible to distinguish archive
+   reconstruction from contemporaneous collection.
+9. Store the resulting tender feature row and model version before the result is
    known. Do not recompute a published forecast using later corrections.
 
-Market-share weights must come from a versioned source available at that cutoff.
-They are observation weights for aggregation, not hand-tuned index weights.
+Market-share weights are calculated from LTA monthly registrations over the 12
+complete months preceding each observation month. They are observation weights
+for aggregation, not hand-tuned index weights. Brand-level registrations are
+not a category-specific sales split, which is a stated limitation.
 
 ## Empirical test
 
@@ -50,3 +70,23 @@ structural-only model; RMSE, direction and coverage are supporting metrics.
 Feature definitions and candidate models must be frozen before examining the
 final holdout period. If uplift is absent or unstable, publish that negative
 result and do not release calibrated weights or probabilities.
+
+## v0.3 archive result (collection cutoff 21 August 2026)
+
+- 441 dated PDFs from six selected high-share brands were retrieved without a
+  failed request; 1,458 PDF pages remain in the audit table.
+- 403 observations passed the explicit Cat A/B label and advertised-price
+  rules: 204 Cat A and 199 Cat B rows from BYD, Honda and Toyota. Premium-brand
+  pages without an unambiguous category label remain context-only.
+- The paired dealer test contains 51 one-tender-ahead forecasts per category.
+- Cat A structural-plus-dealer MAE was S$3,336 versus S$3,528 structural-only,
+  a 5.45% improvement. RMSE improved 0.86%; direction accuracy was 60.8% versus
+  49.0%. The combined 80% interval covered 89.7% but was materially wider.
+- Cat B structural-plus-dealer MAE was S$4,631 versus S$4,250 structural-only,
+  an 8.97% deterioration. RMSE deteriorated 13.45%; direction accuracy was
+  49.0% versus 51.0%.
+
+The Cat A result is retrospective evidence, not a calibrated forecasting edge;
+the Cat B result is negative. Neither supports publishing a composite Dealer
+Pressure Index or probabilities. A prospectively frozen dealer archive is the
+next validation stage.

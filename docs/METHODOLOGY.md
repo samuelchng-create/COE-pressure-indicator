@@ -1,4 +1,4 @@
-# v0.2 methodology and audit
+# v0.2 structural methodology and v0.3 dealer experiment
 
 ## MVP audit findings
 
@@ -52,3 +52,21 @@ interval at a tender uses only absolute errors from earlier outer predictions.
 Back-test improvement is descriptive, not a guarantee. Where structural MAE
 does not beat the best naïve benchmark, the app says so. v0.2 publishes neither
 an upcoming-tender probability nor a composite Dealer Pressure Index.
+
+## v0.3 dealer experiment contract
+
+The experiment predicts the already out-of-sample structural model's residual
+using only dealer features from earlier tender cutoffs. It uses an expanding
+window; Ridge regularization is selected in time-ordered inner folds. The
+comparison is therefore structural-only versus structural-plus-dealer over the
+same outer origins. It reports MAE, RMSE, direction accuracy and 80% prequential
+interval coverage, with persistence retained as a reference.
+
+The dealer history is a retrospective reconstruction from dated SGCarMart
+price-list documents. `available_at` uses the document's dated effective/public
+availability evidence; `retrieved_at` records the later research collection.
+PDF checksums and source URLs make that assumption auditable. This is weaker
+than a prospectively frozen archive and must be followed by live frozen
+validation before any calibrated probability or dealer index is published.
+Date-only archive availability is assigned to end-of-day Singapore time, so a
+document dated on a tender opening day cannot enter that noon cutoff.

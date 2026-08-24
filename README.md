@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.2
+# Singapore COE Pressure Indicator — v0.2 structural + v0.3 dealer experiment
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -7,6 +7,34 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is calibrated. Negative benchmark results remain visible.
+
+## v0.3 SGCarMart dealer archive
+
+- Reconstructs dated 2024–2026 authorised-dealer price-list signals for BYD,
+  Toyota, Mercedes-Benz, BMW, Honda and Tesla from SGCarMart's public archive.
+- Stores each source URL, PDF date, later research retrieval timestamp and
+  SHA-256 checksum. `available_at` is separate from `retrieved_at` so the
+  retrospective as-of assumption is explicit and auditable.
+- Produces model-eligible page summaries only when the PDF contains an explicit
+  Category A or B heading and advertised prices. Unclassified pages remain in
+  the research workbook for review.
+- Uses the median advertised package price on each eligible category-labelled
+  page, explicit COE package/rebate terms, bid guarantees, discounts,
+  promotion deadlines and finance/trade-in text. It does not claim complete
+  model/variant normalization.
+- Weights brands using their LTA new registrations over the preceding 12
+  complete months, divided by all makes. These are aggregation weights, not a
+  hand-built Dealer Pressure Index.
+- Tests a Ridge residual correction over exactly the structural model's
+  out-of-sample predictions with expanding windows and reports whether dealer
+  data actually improves MAE/RMSE/direction/interval coverage.
+- Excludes Category D because SGCarMart's car price-list archive is not a
+  motorcycle dealer archive.
+
+The frozen v0.3 archive contains 441 source PDFs, 1,458 auditable page rows and
+403 model-eligible observations. Over 51 paired forecasts per category, dealer
+signals improved Cat A MAE by 5.45% but worsened Cat B MAE by 8.97%. The app
+shows both results and does not treat the Cat A result as calibrated.
 
 ## v0.2 structural method
 
@@ -38,6 +66,8 @@ streamlit run coe_pressure_app.py
 ```bash
 pytest -q
 python scripts/run_backtest.py
+python scripts/build_tender_schedule.py
+python scripts/run_dealer_experiment.py
 ```
 
 ## Deployment

@@ -16,6 +16,7 @@ from coe_model import CATEGORIES
 DEALER_COLUMNS = [
     "observation_id",
     "observed_at",
+    "available_at",
     "retrieved_at",
     "source_url",
     "source_type",
@@ -30,10 +31,13 @@ DEALER_COLUMNS = [
     "guaranteed_coe_bid_count",
     "guaranteed_coe_terms",
     "finance_incentive_value",
+    "finance_incentive_terms",
     "trade_in_incentive_value",
+    "trade_in_incentive_terms",
     "cash_discount_value",
     "other_incentive_value",
     "promotion_deadline",
+    "promotion_name",
     "roadshow_name",
     "roadshow_start",
     "roadshow_end",
@@ -45,6 +49,7 @@ DEALER_COLUMNS = [
 REQUIRED_DEALER_COLUMNS = {
     "observation_id",
     "observed_at",
+    "available_at",
     "retrieved_at",
     "source_url",
     "category",
@@ -69,6 +74,7 @@ DEALER_NUMERIC_COLUMNS = [
 
 DEALER_DATE_COLUMNS = [
     "observed_at",
+    "available_at",
     "retrieved_at",
     "promotion_deadline",
     "roadshow_start",
@@ -108,10 +114,12 @@ def validate_dealer_observations(frame: pd.DataFrame) -> tuple[pd.DataFrame, lis
     data["guaranteed_coe"] = guaranteed.astype("boolean")
     if data["observation_id"].duplicated().any():
         errors.append("observation_id values must be unique")
-    if data["observed_at"].isna().any() or data["retrieved_at"].isna().any():
-        errors.append("observed_at and retrieved_at must be valid timestamps")
-    if (data["retrieved_at"] < data["observed_at"]).fillna(False).any():
-        errors.append("retrieved_at cannot precede observed_at")
+    if data["observed_at"].isna().any() or data["available_at"].isna().any() or data["retrieved_at"].isna().any():
+        errors.append("observed_at, available_at and retrieved_at must be valid timestamps")
+    if (data["available_at"] < data["observed_at"]).fillna(False).any():
+        errors.append("available_at cannot precede observed_at")
+    if (data["retrieved_at"] < data["available_at"]).fillna(False).any():
+        errors.append("retrieved_at cannot precede available_at")
     if (~data["category"].isin(CATEGORIES)).any():
         errors.append("category must be Category A, Category B, or Category D")
     if (data["advertised_price"] <= 0).fillna(True).any():
@@ -137,13 +145,19 @@ def aggregate_before_cutoff(
     cutoff_at: pd.Timestamp,
     lookback_days: int = 21,
 ) -> dict[str, float]:
-    """Aggregate only observations retrieved before a frozen forecast cutoff."""
+    """Aggregate only observations publicly available before a frozen cutoff.
+
+    ``retrieved_at`` remains the research collection timestamp.  Historical,
+    dated archive documents use their independently evidenced publication or
+    effective timestamp in ``available_at``; this distinction prevents the
+    collection date from erasing a legitimate retrospective as-of test.
+    """
     cutoff = pd.Timestamp(cutoff_at)
     cutoff = cutoff.tz_localize("UTC") if cutoff.tzinfo is None else cutoff.tz_convert("UTC")
     start = cutoff - pd.Timedelta(days=lookback_days)
     sample = observations[
         (observations["category"] == category)
-        & (observations["retrieved_at"] <= cutoff)
+        & (observations["available_at"] <= cutoff)
         & (observations["observed_at"] >= start)
         & (observations["observed_at"] <= cutoff)
     ].copy()
