@@ -34,19 +34,21 @@ URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&li
 
 
 @st.cache_data(ttl=3600)
-def load_coe() -> pd.DataFrame:
+def load_coe(cache_version: str) -> pd.DataFrame:
+    del cache_version  # Included in the cache key to invalidate model-regime changes.
     response = requests.get(URL, timeout=20)
     response.raise_for_status()
     return prepare_coe_data(response.json()["result"]["records"])
 
 
 @st.cache_data(show_spinner=False)
-def run_backtest(data: pd.DataFrame, category: str) -> pd.DataFrame:
+def run_backtest(data: pd.DataFrame, category: str, cache_version: str) -> pd.DataFrame:
+    del cache_version
     return walk_forward_backtest(data, category)
 
 
 try:
-    df = load_coe()
+    df = load_coe(MODEL_VERSION)
 except Exception as error:
     st.error(f"Could not load or validate the official data.gov.sg dataset: {error}")
     st.stop()
@@ -80,7 +82,7 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         st.caption("Chart dates approximate tender order (1st and 15th); the source identifies month and exercise number, not closing timestamps.")
 
         with st.spinner(f"Running leakage-safe {category} walk-forward evaluation…"):
-            backtest = run_backtest(df, category)
+            backtest = run_backtest(df, category, MODEL_VERSION)
         if backtest.empty:
             st.warning("Not enough validated history to run this category's back-test.")
             continue
