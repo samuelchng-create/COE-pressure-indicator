@@ -30,6 +30,7 @@ DEALER_COLUMNS = [
     "guaranteed_coe",
     "guaranteed_coe_bid_count",
     "guaranteed_coe_terms",
+    "finance_rate_pct",
     "finance_incentive_value",
     "finance_incentive_terms",
     "trade_in_incentive_value",
@@ -65,6 +66,7 @@ DEALER_NUMERIC_COLUMNS = [
     "previous_advertised_price",
     "coe_rebate_level",
     "guaranteed_coe_bid_count",
+    "finance_rate_pct",
     "finance_incentive_value",
     "trade_in_incentive_value",
     "cash_discount_value",
@@ -124,6 +126,9 @@ def validate_dealer_observations(frame: pd.DataFrame) -> tuple[pd.DataFrame, lis
         errors.append("category must be Category A, Category B, or Category D")
     if (data["advertised_price"] <= 0).fillna(True).any():
         errors.append("advertised_price must be present and positive")
+    invalid_finance_rates = data["finance_rate_pct"].notna() & ~data["finance_rate_pct"].between(0.1, 15)
+    if invalid_finance_rates.any():
+        errors.append("finance_rate_pct must be between 0.1% and 15% when present")
     invalid_weights = data["market_share_weight"].isna() | (data["market_share_weight"] < 0)
     if invalid_weights.any():
         errors.append("market_share_weight must be present and non-negative")
@@ -187,6 +192,7 @@ def aggregate_before_cutoff(
         "weighted_price_change": _weighted_mean(price_change, weights),
         "weighted_coe_rebate": _weighted_mean(sample["coe_rebate_level"], weights),
         "weighted_total_incentive": _weighted_mean(total_incentive, weights),
+        "weighted_finance_rate_pct": _weighted_mean(sample["finance_rate_pct"], weights),
         "weighted_guaranteed_coe_share": _weighted_mean(sample["guaranteed_coe"].astype(float), weights),
         "weighted_promotion_deadline_days": _weighted_mean(deadline_days, weights),
         "weighted_active_roadshow_share": _weighted_mean(active_roadshow.astype(float), weights),

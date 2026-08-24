@@ -51,6 +51,7 @@ def main() -> None:
     )
     output["guaranteed_coe_bid_count"] = raw["coe_bid_count"]
     output["guaranteed_coe_terms"] = raw["guaranteed_coe_terms"]
+    output["finance_rate_pct"] = raw["finance_rate_pct"]
     output["finance_incentive_value"] = raw["finance_incentive_value"]
     output["finance_incentive_terms"] = raw["finance_incentive_text"]
     output["trade_in_incentive_value"] = raw["trade_in_incentive_value"]

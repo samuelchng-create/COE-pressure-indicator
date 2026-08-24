@@ -29,6 +29,23 @@ def pair_economic_backtests(structural: pd.DataFrame, augmented: pd.DataFrame) -
     return paired
 
 
+def add_financing_backtest(paired: pd.DataFrame, financing: pd.DataFrame) -> pd.DataFrame:
+    """Attach the full economy-plus-financing candidate at identical origins."""
+    right = financing[
+        ["tender_id", "structural", "lower", "upper", "selected_alpha", "model_version"]
+    ].rename(columns={
+        "structural": "structural_plus_economy_financing",
+        "lower": "financing_lower",
+        "upper": "financing_upper",
+        "selected_alpha": "financing_selected_alpha",
+        "model_version": "financing_model_version",
+    })
+    combined = paired.merge(right, on="tender_id", how="inner", validate="one_to_one")
+    if len(combined) != len(paired) or len(combined) != len(financing):
+        raise ValueError("Financing and economy back-tests do not cover identical tender origins")
+    return combined
+
+
 def summarize_economic_uplift(backtest: pd.DataFrame) -> pd.DataFrame:
     """Report paired accuracy and interval metrics without claiming calibration."""
     if backtest.empty:
@@ -38,6 +55,7 @@ def summarize_economic_uplift(backtest: pd.DataFrame) -> pd.DataFrame:
     for model, lower, upper in (
         ("structural", "structural_lower", "structural_upper"),
         ("structural_plus_economy", "economy_lower", "economy_upper"),
+        ("structural_plus_economy_financing", "financing_lower", "financing_upper"),
         ("persistence", None, None),
     ):
         prediction = backtest[model]
@@ -65,6 +83,9 @@ def summarize_economic_uplift(backtest: pd.DataFrame) -> pd.DataFrame:
         })
     result = pd.DataFrame(rows)
     base = result[result["model"].eq("structural")].iloc[0]
+    economy_core = result[result["model"].eq("structural_plus_economy")].iloc[0]
     result["MAE_improvement_vs_structural"] = (base.MAE - result.MAE) / base.MAE
     result["RMSE_improvement_vs_structural"] = (base.RMSE - result.RMSE) / base.RMSE
+    result["MAE_improvement_vs_economy_core"] = (economy_core.MAE - result.MAE) / economy_core.MAE
+    result["RMSE_improvement_vs_economy_core"] = (economy_core.RMSE - result.RMSE) / economy_core.RMSE
     return result

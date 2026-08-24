@@ -26,6 +26,9 @@ def main() -> None:
     assert validated["market_share_weight"].between(0, 1).all()
     assert (validated["available_at"] <= validated["retrieved_at"]).all()
     assert validated["advertised_price"].between(80_000, 1_500_000).all()
+    advertised_rates = validated["finance_rate_pct"].dropna()
+    assert len(advertised_rates) == 135
+    assert advertised_rates.between(0.1, 15).all()
     assert len(validated) == 997
     assert set(validated["brand"]) == {
         "BYD", "GAC", "Honda", "Hyundai", "Kia", "Mazda", "Nissan", "Subaru", "Toyota"

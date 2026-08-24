@@ -1,11 +1,11 @@
 import pandas as pd
 
-from scripts.sgcarmart.build_sgcarmart_dataset import category_for_page
+from scripts.sgcarmart.build_sgcarmart_dataset import category_for_page, page_features
 from scripts.sgcarmart.export_dealer_observations import evidenced_available_at
 
 
-def line(text: str, y: float = 0.85) -> dict:
-    return {"text": text, "y": y}
+def line(text: str, y: float = 0.85, x: float = 0.5) -> dict:
+    return {"text": text, "y": y, "x": x, "width": 0.1, "height": 0.02}
 
 
 def test_category_accepts_explicit_prefixed_page_heading():
@@ -46,3 +46,11 @@ def test_contemporaneous_retrieval_evidences_earlier_availability():
         }
     )
     assert evidenced_available_at(row) == "2026-08-24T21:39:05+08:00"
+
+
+def test_finance_rate_requires_an_explicit_plausible_rate_label():
+    assert page_features([line("2.68% Interest Rate")])["finance_rate_pct"] == 2.68
+    false_match = page_features(
+        [line("Finance rebate for a $100,000 seven-year loan; discount 20%")]
+    )
+    assert pd.isna(false_match["finance_rate_pct"])

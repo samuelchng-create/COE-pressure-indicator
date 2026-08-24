@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+import subprocess
 import sys
 
 import pandas as pd
-import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -28,9 +29,13 @@ def main() -> None:
     if errors:
         raise ValueError("Dealer observations failed validation: " + "; ".join(errors))
     schedule = pd.read_csv(ROOT / "data" / "tender_schedule_2024_2026.csv")
-    response = requests.get(URL, timeout=30)
-    response.raise_for_status()
-    coe = prepare_coe_data(response.json()["result"]["records"])
+    response = subprocess.run(
+        ["curl", "-fsSL", "--retry", "3", "--retry-delay", "2", URL],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    coe = prepare_coe_data(json.loads(response.stdout)["result"]["records"])
 
     prediction_frames = []
     metric_frames = []

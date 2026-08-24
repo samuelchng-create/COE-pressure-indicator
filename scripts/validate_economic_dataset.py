@@ -24,7 +24,9 @@ def main() -> None:
     predictions = pd.read_csv(ROOT / "data" / "economic_backtest_predictions.csv")
     if set(metrics["category"]) != {"Category A", "Category B", "Category D"}:
         raise ValueError("metrics do not cover Categories A, B and D")
-    if set(metrics["model"]) != {"structural", "structural_plus_economy", "persistence"}:
+    if set(metrics["model"]) != {
+        "structural", "structural_plus_economy", "structural_plus_economy_financing", "persistence"
+    }:
         raise ValueError("metrics do not contain the required paired models")
     if predictions.duplicated(["category", "tender_id"]).any():
         raise ValueError("predictions contain duplicate category/tender rows")
@@ -34,7 +36,10 @@ def main() -> None:
         raise ValueError("metrics are not labelled with the post-2015 model version")
     if (predictions["tender_id"].str.slice(0, 7) < "2015-10").any():
         raise ValueError("predictions contain pre-October-2015 tenders")
-    expected_source_ids = {"DEXSIUS", "VIXCLS", "DGS10", "DCOILBRENTEU", "NASDAQCOM", "M015631", "M213781", "M182342"}
+    expected_source_ids = {
+        "DEXSIUS", "VIXCLS", "DGS10", "DCOILBRENTEU", "NASDAQCOM",
+        "M015631", "M213781", "M182342", "MAS-MSB-VEHICLE-HP-3Y",
+    }
     if set(manifest["source_id"]) != expected_source_ids:
         raise ValueError("source manifest is incomplete")
     print(

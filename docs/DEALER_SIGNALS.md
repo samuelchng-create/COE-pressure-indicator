@@ -2,7 +2,7 @@
 
 ## Observation grain and provenance
 
-The SGCarMart v0.6 research row is a brand/category/page summary at a point in
+The SGCarMart v0.7 research row is a brand/category/page summary at a point in
 time, not a claim that every model and variant was normalized. `observed_at` is
 the dated price-list effective time; `available_at` is the evidence-based
 public availability time used for historical cutoffs; `retrieved_at` is the
@@ -19,7 +19,8 @@ available at the noon forecast cutoff without such evidence.
 
 The versioned CSV schema covers advertised and previous price, COE rebate,
 guaranteed-COE status/bid count/terms, finance/trade-in/cash/other incentives,
-promotion deadlines, roadshow windows and market-share weight. Monetary fields
+explicitly labelled advertised `finance_rate_pct`, promotion deadlines,
+roadshow windows and market-share weight. Monetary fields
 are SGD and missing values mean “not observed,” not zero, except that incentive
 components are summed with missing components treated as zero only after the
 row has passed validation.
@@ -73,7 +74,7 @@ Feature definitions and candidate models must be frozen before examining the
 final holdout period. If uplift is absent or unstable, publish that negative
 result and do not release calibrated weights or probabilities.
 
-## v0.6 expanded-brand post-policy rerun (collection cutoff 24 August 2026)
+## v0.7 advertised car-financing rerun (collection cutoff 24 August 2026)
 
 - 863 dated PDFs from 12 selected high-registration brands were retrieved
   without a failed request; 2,629 PDF page summaries remain in the audit table.
@@ -81,13 +82,16 @@ result and do not release calibrated weights or probabilities.
   rules: 499 Cat A and 498 Cat B rows from BYD, GAC, Honda, Hyundai, Kia,
   Mazda, Nissan, Subaru and Toyota. BMW, Mercedes-Benz and Tesla pages, plus
   any mixed or unlabelled pages from other brands, remain context-only.
+- 135 observations contain a valid explicitly labelled advertised finance
+  rate, all from Honda and ranging from 2.58% to 2.78%. Broad percentage text
+  is not parsed as interest, and no motorcycle rate is inferred.
 - The paired dealer test contains 51 one-tender-ahead forecasts per category.
-- Cat A structural-plus-dealer MAE was S$3,413 versus S$3,327 structural-only,
-  a 2.61% deterioration. RMSE deteriorated 4.49%; direction accuracy was 66.7%
-  versus 68.6%. The combined 80% interval covered 89.7% but was materially wider.
-- Cat B structural-plus-dealer MAE was S$4,797 versus S$4,348 structural-only,
-  a 10.32% deterioration. RMSE deteriorated 13.83%; direction accuracy was
-  49.0% versus 51.0%. The combined 80% interval covered 82.1% and was wider.
+- Cat A structural-plus-dealer MAE was S$3,480 versus S$3,327 structural-only,
+  a 4.62% deterioration. RMSE deteriorated 6.11%; direction accuracy was 64.7%
+  versus 68.6%. The combined 80% interval covered 92.3% but was materially wider.
+- Cat B structural-plus-dealer MAE was S$4,815 versus S$4,348 structural-only,
+  a 10.73% deterioration. RMSE deteriorated 14.26%; direction accuracy was
+  47.1% versus 51.0%. The combined 80% interval covered 82.1% and was wider.
 
 Both expanded-brand results are negative. They do not support publishing a
 composite Dealer Pressure Index, calibrated probabilities, or a dealer-model

@@ -18,7 +18,7 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from economic_features import ECONOMIC_MODEL_VERSION, merge_economic_features
+from economic_features import ECONOMIC_FEATURE_COLUMNS, ECONOMIC_MODEL_VERSION, merge_economic_features
 
 
 CATEGORIES = ("Category A", "Category B", "Category D")
@@ -81,6 +81,7 @@ def build_feature_frame(
     data: pd.DataFrame,
     category: str,
     economic_features: pd.DataFrame | None = None,
+    economic_feature_columns: tuple[str, ...] | None = None,
 ) -> pd.DataFrame:
     """Build features whose values are available before each target tender.
 
@@ -131,7 +132,8 @@ def build_feature_frame(
     result["second_exercise"] = (bid_numbers == 2).astype(float)
     frame = result.replace([np.inf, -np.inf], np.nan).dropna().reset_index()
     if economic_features is not None:
-        frame = merge_economic_features(frame, economic_features)
+        columns = economic_feature_columns or ECONOMIC_FEATURE_COLUMNS
+        frame = merge_economic_features(frame, economic_features, columns=columns)
     return frame
 
 
@@ -186,6 +188,7 @@ def walk_forward_backtest(
     data: pd.DataFrame,
     category: str,
     economic_features: pd.DataFrame | None = None,
+    economic_feature_columns: tuple[str, ...] | None = None,
     min_train: int = 60,
     interval_coverage: float = 0.80,
     min_calibration: int = 20,
@@ -193,7 +196,12 @@ def walk_forward_backtest(
     inner_splits: int = 4,
 ) -> pd.DataFrame:
     """Run an expanding-window, nested-tuning, one-step-ahead back-test."""
-    frame = build_feature_frame(data, category, economic_features=economic_features)
+    frame = build_feature_frame(
+        data,
+        category,
+        economic_features=economic_features,
+        economic_feature_columns=economic_feature_columns,
+    )
     if len(frame) <= min_train:
         return pd.DataFrame()
     columns = feature_columns(frame)

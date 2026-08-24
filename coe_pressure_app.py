@@ -25,7 +25,7 @@ from economic_features import (
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.6 dealer-archive expansion + v0.5 post-policy structural/economy comparison • "
+    f"v0.7 vehicle-financing experiment + v0.6 dealer archive • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -163,6 +163,13 @@ with tabs[3]:
                 f"The source corpus covers {source_brand_count} brands; eligible rows from "
                 f"{', '.join(sorted(validated_archive['brand'].unique()))} require an explicit Cat A/B page label and extracted advertised prices."
             )
+            finance_rates = validated_archive["finance_rate_pct"].dropna()
+            if not finance_rates.empty:
+                st.caption(
+                    f"Explicit advertised car-finance rates: {len(finance_rates):,} observations, "
+                    f"{finance_rates.min():.2f}%–{finance_rates.max():.2f}%. "
+                    "Only clearly labelled plausible percentage rates are retained; the current archive coverage is Honda only."
+                )
     if metrics_path.exists():
         metrics = pd.read_csv(metrics_path)
         combined = metrics[metrics["model"].eq("structural_plus_dealer")].copy()
@@ -214,8 +221,9 @@ Dealer features are accepted only when source URL, observation time, evidenced a
 with tabs[4]:
     st.subheader("Economic and financial-market variables")
     st.write(
-        "The candidate v0.5 economy model adds Singapore growth, inflation and unemployment plus "
-        "SGD/USD, global equities, market volatility, long-term interest rates and Brent oil. The existing "
+        "The candidate v0.7 model adds Singapore growth, inflation and unemployment; "
+        "SGD/USD, global equities, volatility, long-term rates and oil; and the MAS three-year "
+        "new-vehicle hire-purchase rate with an explicit staleness measure. The existing "
         "structural forecast remains primary unless the augmented model improves frozen out-of-sample results."
     )
     economic_path = Path(__file__).parent / "data" / "economic_financial_features.csv"
@@ -234,10 +242,12 @@ with tabs[4]:
             e3.metric("US 10-year yield", f"{latest_economic.us_10y_yield:.2f}%")
             e4.metric("Brent crude", f"US${latest_economic.brent_usd:.2f}")
             e5.metric("Nasdaq 1-month", f"{latest_economic.nasdaq_return_21d:+.1%}")
-            e6, e7, e8 = st.columns(3)
+            e6, e7, e8, e9, e10 = st.columns(5)
             e6.metric("Singapore real GDP YoY", f"{latest_economic.sg_real_gdp_yoy:.1f}%")
             e7.metric("Singapore CPI YoY", f"{latest_economic.sg_cpi_yoy:.1f}%")
             e8.metric("Singapore unemployment", f"{latest_economic.sg_unemployment_rate:.1f}%")
+            e9.metric("Vehicle HP rate", f"{latest_economic.vehicle_hire_purchase_3y_rate:.2f}%")
+            e10.metric("Vehicle-rate age", f"{latest_economic.vehicle_hire_purchase_rate_staleness_days:,.0f} days")
             st.download_button(
                 "Download tender-aligned economic features",
                 economic_raw.to_csv(index=False).encode(),
@@ -250,25 +260,24 @@ with tabs[4]:
             )
     if economic_metrics_path.exists():
         economic_metrics = pd.read_csv(economic_metrics_path)
-        economy_model = economic_metrics[economic_metrics["model"].eq("structural_plus_economy")]
-        if not economy_model.empty:
-            st.subheader("Paired expanding-window test")
-            for row in economy_model.itertuples(index=False):
-                c1, c2, c3, c4 = st.columns(4)
+        financing_model = economic_metrics[
+            economic_metrics["model"].eq("structural_plus_economy_financing")
+        ]
+        if not financing_model.empty:
+            st.subheader("Paired expanding-window financing-rate test")
+            for row in financing_model.itertuples(index=False):
+                c1, c2, c3, c4, c5 = st.columns(5)
                 c1.metric(f"{row.category} forecasts", f"{int(row.observations):,}")
-                c2.metric("Economy-model MAE", f"S${row.MAE:,.0f}")
+                c2.metric("Financing-model MAE", f"S${row.MAE:,.0f}")
                 c3.metric("MAE vs structural", f"{row.MAE_improvement_vs_structural:+.1%}")
-                c4.metric("Direction accuracy", f"{row.direction_accuracy:.1%}")
+                c4.metric("MAE vs economy core", f"{row.MAE_improvement_vs_economy_core:+.1%}")
+                c5.metric("Direction accuracy", f"{row.direction_accuracy:.1%}")
                 if row.MAE_improvement_vs_structural <= 0:
-                    st.warning(f"For {row.category}, the economy/markets block worsened MAE. No edge is claimed.")
-                elif row.MAE_improvement_vs_structural < 0.01:
-                    st.info(
-                        f"For {row.category}, MAE improved by less than 1%. This is treated as marginal, "
-                        "not as a reliable forecasting edge."
-                    )
+                    st.warning(f"For {row.category}, the full financing-rate candidate worsened MAE. No edge is claimed.")
             st.caption(
-                "The post-October-2015 result is mixed and small for Cat A/B, while Cat D deteriorates. "
-                "The primary forecast therefore remains structural-only."
+                "The MAS series covers new vehicles generally and is used as a financing-cost proxy for cars and motorcycles; "
+                "it does not publish a vehicle-type split and its last observation is April 2023. Adding its level and staleness "
+                "worsened MAE versus both structural-only and the 13-variable economy core in all categories."
             )
             st.dataframe(economic_metrics, hide_index=True, width="stretch")
     if source_manifest_path.exists():
@@ -280,7 +289,7 @@ with tabs[4]:
     )
 
 with tabs[5]:
-    st.subheader("v0.6 dealer archive / v0.5 post-policy audit trail")
+    st.subheader("v0.7 financing / v0.6 dealer archive audit trail")
     st.markdown(
         f"""
 - **Common analysis boundary:** all charts, model fitting, tuning, intervals and benchmark metrics start in October 2015. Pre-October-2015 tenders are excluded for policy-regime reliability and comparability.
@@ -295,7 +304,8 @@ with tabs[5]:
 - **Dealer archive reconstruction:** date-only historical SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date. If contemporaneous collection proves an earlier public time, that observed time is used; retrieval timestamps and PDF checksums remain recorded for audit.
 - **Expanded dealer coverage:** the v0.6 source corpus covers 12 authorised-dealer brands. A brand contributes model rows only when its page layout passes the same explicit Cat A/B label and advertised-price rules; categories are never inferred from vehicle models.
 - **Dealer-model eligibility:** only explicitly labelled Cat A/B pages with extracted advertised prices enter the incremental test. Unclassified pages remain visible for review; Cat D has no SGCarMart car-price-list dealer signal.
-- **Economy/markets experiment:** the candidate model adds 13 as-of variables under `{ECONOMIC_MODEL_VERSION}` and is evaluated at the same outer forecast origins as the structural model.
+- **Economy/markets/financing experiment:** the candidate adds 15 as-of variables under `{ECONOMIC_MODEL_VERSION}`, including the MAS new-vehicle hire-purchase rate and its staleness, and is evaluated at the same outer forecast origins as the 13-variable economy core and structural model.
+- **Car versus motorcycle financing:** 135 explicit advertised car-rate observations enter the Cat A/B dealer experiment. For Cat D, the MAS all-new-vehicle rate is only a market-wide proxy; no motorcycle-specific historical rate is imputed.
 - **Market-data timing:** daily FX, volatility, interest-rate and oil observations are treated as available in Singapore only on the following calendar day. Twenty-one-trading-day changes use data at least 30 calendar days earlier.
 - **Macro-data timing and revision caveat:** CPI is delayed 45 days; GDP and unemployment are delayed 75 days. SingStat tables are current-vintage and may include later revisions, so the experiment is not a real-time-vintage back-test.
 """
@@ -311,6 +321,7 @@ with tabs[5]:
         "Sources: [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) • "
         "[LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) • "
         "[SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) • "
+        "[MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) • "
         "[SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) • "
         "[FRED economic data](https://fred.stlouisfed.org/)"
     )

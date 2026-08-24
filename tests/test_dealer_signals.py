@@ -18,6 +18,7 @@ def observations() -> pd.DataFrame:
                 "advertised_price": 150000,
                 "previous_advertised_price": 152000,
                 "guaranteed_coe": True,
+                "finance_rate_pct": 2.68,
                 "market_share_weight": 2,
             },
             {
@@ -45,6 +46,7 @@ def test_validator_and_cutoff_exclude_future_observations():
     assert features["dealer_observation_count"] == 1
     assert features["weighted_advertised_price"] == 150000
     assert features["weighted_price_change"] == -2000
+    assert features["weighted_finance_rate_pct"] == 2.68
 
 
 def test_retrieval_before_availability_is_rejected():
@@ -61,3 +63,10 @@ def test_dated_archive_availability_can_precede_research_retrieval():
     assert errors == []
     features = aggregate_before_cutoff(validated, "Category A", pd.Timestamp("2026-08-10T00:00:00Z"))
     assert features["dealer_observation_count"] == 1
+
+
+def test_implausible_finance_rate_is_rejected():
+    frame = observations().iloc[[0]].copy()
+    frame.loc[:, "finance_rate_pct"] = 20
+    _, errors = validate_dealer_observations(frame)
+    assert any("finance_rate_pct" in error for error in errors)

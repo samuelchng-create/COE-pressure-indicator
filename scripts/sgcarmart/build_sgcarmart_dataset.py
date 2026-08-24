@@ -24,7 +24,11 @@ SHORT_DATE_RANGE_RE = re.compile(
     re.IGNORECASE,
 )
 BIDS_RE = re.compile(r"(\d+)\s*BIDS?", re.IGNORECASE)
-RATE_RE = re.compile(r"(?:interest|finance).*?([0-9]+(?:\.[0-9]+)?)\s*%", re.IGNORECASE)
+RATE_RE = re.compile(
+    r"(?:\b(?:INTEREST\s*RATE|FINANCE\s*RATE|INTEREST)\b[^%\n]{0,50}?([0-9]{1,2}(?:\.[0-9]+)?)\s*%"
+    r"|([0-9]{1,2}(?:\.[0-9]+)?)\s*%\s*\b(?:INTEREST\s*RATE|FINANCE\s*RATE|INTEREST)\b)",
+    re.IGNORECASE,
+)
 
 
 def parse_ocr(path: Path) -> list[list[dict]]:
@@ -177,7 +181,12 @@ def page_features(lines: list[dict]) -> dict:
             finance_amounts.append(value)
         if any(abs(line["y"] - label["y"]) <= 0.012 and line["x"] >= label["x"] - 0.02 for label in trade_label_rows):
             trade_amounts.append(value)
-    rate_match = RATE_RE.search(text.replace("\n", " "))
+    rates = []
+    for line in lines:
+        for match in RATE_RE.finditer(line["text"]):
+            value = float(match.group(1) or match.group(2))
+            if 0.1 <= value <= 15:
+                rates.append(value)
 
     return {
         "advertised_price_min": min(prices) if prices else None,
@@ -190,7 +199,7 @@ def page_features(lines: list[dict]) -> dict:
         "promotion_discount_amount": max(discount_candidates) if discount_candidates else None,
         "finance_incentive_value": max(finance_amounts) if finance_amounts else None,
         "trade_in_incentive_value": max(trade_amounts) if trade_amounts else None,
-        "finance_rate_pct": float(rate_match.group(1)) if rate_match else None,
+        "finance_rate_pct": float(pd.Series(rates).median()) if rates else None,
         "finance_incentive_text": " | ".join(dict.fromkeys(finance_lines))[:1000],
         "trade_in_incentive_text": " | ".join(dict.fromkeys(trade_lines))[:1000],
         "promotion_name": " | ".join(dict.fromkeys(promo_lines))[:500],

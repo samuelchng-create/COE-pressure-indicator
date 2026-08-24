@@ -1,7 +1,11 @@
 import pandas as pd
 
 from coe_model import build_feature_frame, prepare_coe_data, walk_forward_backtest
-from economic_features import ECONOMIC_FEATURE_COLUMNS, validate_economic_features
+from economic_features import (
+    ECONOMIC_CORE_FEATURE_COLUMNS,
+    ECONOMIC_FEATURE_COLUMNS,
+    validate_economic_features,
+)
 from test_coe_model import synthetic_records
 
 
@@ -35,6 +39,19 @@ def test_economic_features_merge_by_target_tender():
     source = economic_rows().set_index("tender_id").loc[target["tender_id"]]
     for column in ECONOMIC_FEATURE_COLUMNS:
         assert target[column] == source[column]
+
+
+def test_economy_core_can_be_evaluated_without_financing_features():
+    coe = prepare_coe_data(synthetic_records(10))
+    frame = build_feature_frame(
+        coe,
+        "Category A",
+        economic_features=economic_rows(),
+        economic_feature_columns=ECONOMIC_CORE_FEATURE_COLUMNS,
+    )
+    assert set(ECONOMIC_CORE_FEATURE_COLUMNS).issubset(frame.columns)
+    assert "vehicle_hire_purchase_3y_rate" not in frame.columns
+    assert "vehicle_hire_purchase_rate_staleness_days" not in frame.columns
 
 
 def test_future_economic_mutation_cannot_change_earlier_forecasts():

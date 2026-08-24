@@ -12,7 +12,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-MODEL_VERSION = "v0.6-dealer-residual-ridge-expanded-brands-post-2015-1"
+MODEL_VERSION = "v0.7-dealer-residual-ridge-car-financing-post-2015-1"
 DEALER_FEATURE_COLUMNS = [
     "dealer_observation_count",
     "dealer_brand_count",
@@ -20,6 +20,7 @@ DEALER_FEATURE_COLUMNS = [
     "weighted_price_change",
     "weighted_coe_rebate",
     "weighted_total_incentive",
+    "weighted_finance_rate_pct",
     "weighted_guaranteed_coe_share",
     "weighted_promotion_deadline_days",
     "weighted_active_roadshow_share",

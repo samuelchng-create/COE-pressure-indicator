@@ -6,12 +6,14 @@ import numpy as np
 import pandas as pd
 
 
-ECONOMIC_MODEL_VERSION = "v0.5-structural-economy-ridge-change-post-2015-1"
+ECONOMIC_MODEL_VERSION = "v0.7-structural-economy-vehicle-financing-post-2015-1"
 ECONOMIC_FEATURE_AVAILABILITY = {
     "daily FX, volatility, rates and oil": "Observation date plus one calendar day, noon Singapore time.",
     "market changes": "Latest as-of value versus the latest value at least 30 calendar days earlier.",
     "Singapore CPI": "Month-end plus a conservative 45-day publication buffer.",
     "Singapore GDP and unemployment": "Quarter-end plus a conservative 75-day publication buffer.",
+    "vehicle hire-purchase rate": "MAS month-end observation plus a conservative 45-day publication buffer.",
+    "vehicle-rate staleness": "Days since the period end of the latest rate available at the tender cutoff.",
     "macro revision risk": "Current-vintage SingStat histories may contain later revisions.",
 }
 ECONOMIC_FEATURE_COLUMNS = (
@@ -28,7 +30,10 @@ ECONOMIC_FEATURE_COLUMNS = (
     "sg_real_gdp_yoy",
     "sg_cpi_yoy",
     "sg_unemployment_rate",
+    "vehicle_hire_purchase_3y_rate",
+    "vehicle_hire_purchase_rate_staleness_days",
 )
+ECONOMIC_CORE_FEATURE_COLUMNS = ECONOMIC_FEATURE_COLUMNS[:-2]
 REQUIRED_COLUMNS = ("tender_id", "forecast_cutoff_at", *ECONOMIC_FEATURE_COLUMNS)
 
 
@@ -48,6 +53,7 @@ def validate_economic_features(frame: pd.DataFrame) -> tuple[pd.DataFrame, list[
         "gdp_available_at",
         "cpi_available_at",
         "unemployment_available_at",
+        "vehicle_hire_purchase_available_at",
     )
     for column in availability_columns:
         if column not in data:
@@ -68,14 +74,21 @@ def validate_economic_features(frame: pd.DataFrame) -> tuple[pd.DataFrame, list[
     return data.sort_values("forecast_cutoff_at").reset_index(drop=True), errors
 
 
-def merge_economic_features(structural_frame: pd.DataFrame, economic: pd.DataFrame) -> pd.DataFrame:
+def merge_economic_features(
+    structural_frame: pd.DataFrame,
+    economic: pd.DataFrame,
+    columns: tuple[str, ...] = ECONOMIC_FEATURE_COLUMNS,
+) -> pd.DataFrame:
     """Attach validated as-of variables without changing tender ordering."""
     validated, errors = validate_economic_features(economic)
     if errors:
         raise ValueError("; ".join(errors))
-    columns = ["tender_id", *ECONOMIC_FEATURE_COLUMNS]
-    merged = structural_frame.merge(validated[columns], on="tender_id", how="left", validate="one_to_one")
-    missing_rows = merged[list(ECONOMIC_FEATURE_COLUMNS)].isna().any(axis=1)
+    invalid_columns = sorted(set(columns) - set(ECONOMIC_FEATURE_COLUMNS))
+    if invalid_columns:
+        raise ValueError(f"Unknown economic features: {', '.join(invalid_columns)}")
+    merge_columns = ["tender_id", *columns]
+    merged = structural_frame.merge(validated[merge_columns], on="tender_id", how="left", validate="one_to_one")
+    missing_rows = merged[list(columns)].isna().any(axis=1)
     if missing_rows.any():
         missing_ids = ", ".join(merged.loc[missing_rows, "tender_id"].head(5))
         raise ValueError(f"Economic features are unavailable for structural tenders: {missing_ids}")
