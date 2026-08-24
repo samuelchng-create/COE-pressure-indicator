@@ -9,6 +9,17 @@ from pathlib import Path
 import pandas as pd
 
 
+def evidenced_available_at(row: pd.Series) -> str:
+    """Use conservative end-of-day unless collection proves earlier availability."""
+    end_of_day = pd.Timestamp(f"{row.source_document_date}T23:59:59", tz="Asia/Singapore")
+    retrieved = pd.Timestamp(row.retrieved_at_utc)
+    if retrieved.tzinfo is None:
+        retrieved = retrieved.tz_localize("UTC")
+    if retrieved < end_of_day:
+        return retrieved.tz_convert("Asia/Singapore").floor("s").isoformat()
+    return end_of_day.isoformat()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=Path)
@@ -24,7 +35,7 @@ def main() -> None:
         axis=1,
     )
     output["observed_at"] = raw["observed_at"]
-    output["available_at"] = raw["source_document_date"].astype(str) + "T23:59:59+08:00"
+    output["available_at"] = raw.apply(evidenced_available_at, axis=1)
     output["retrieved_at"] = raw["retrieved_at_utc"]
     output["source_url"] = raw["source_url"]
     output["source_type"] = "SGCarMart archived authorised-dealer price list"
@@ -61,7 +72,8 @@ def main() -> None:
             f"price_range={row.advertised_price_min}-{row.advertised_price_max}; "
             f"finance_rate_pct={row.finance_rate_pct}; finance={row.finance_incentive_text}; "
             f"trade_in={row.trade_in_incentive_text}; sha256={row.source_sha256}; "
-            "retrospective archive reconstruction; date-only available_at is conservatively set to end-of-day."
+            "retrospective archive reconstruction; date-only available_at is conservatively set to end-of-day "
+            "unless the recorded collection time proves earlier public availability."
         ),
         axis=1,
     )

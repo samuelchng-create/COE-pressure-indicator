@@ -14,7 +14,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-SELECTED_IDS = {4, 13, 25, 44, 81, 86}
+# Twelve high-registration passenger-car brands. Pages still enter the model
+# only when the deterministic parser finds an explicit Cat A/B page label and
+# advertised prices; mixed-category documents remain auditable context.
+SELECTED_IDS = {4, 13, 14, 18, 24, 25, 29, 42, 44, 81, 86, 123}
 
 
 def sha256(path: Path) -> str:
@@ -56,6 +59,18 @@ def main() -> None:
         "local_path", "http_status", "bytes", "sha256", "retrieved_at_utc", "error",
     ]
     rows = list(existing.values())
+    for row in rows:
+        if row["http_status"] == "200" and not row.get("error"):
+            row["error"] = "none"
+    rows.sort(key=lambda row: (row["document_date"], int(row["dealer_id"])))
+
+    def write_manifest() -> None:
+        with manifest_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(rows)
+
+    write_manifest()
     complete = {(int(row["dealer_id"]), row["document_date"]) for row in rows if row["http_status"] == "200"}
     print(f"planned={len(jobs)} already_complete={len(complete)}", flush=True)
 
@@ -96,15 +111,12 @@ def main() -> None:
             "bytes": size,
             "sha256": checksum,
             "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
-            "error": error,
+            "error": error or "none",
         }
         rows = [r for r in rows if (int(r["dealer_id"]), r["document_date"]) != key]
         rows.append(row)
         rows.sort(key=lambda r: (r["document_date"], int(r["dealer_id"])))
-        with manifest_path.open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(rows)
+        write_manifest()
         print(f"{sequence}/{len(jobs)} {dealer['brand']} {document_date} status={status or 'error'}", flush=True)
         time.sleep(args.delay)
 

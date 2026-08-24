@@ -1,4 +1,4 @@
-# v0.5 post-policy structural, dealer and economy methodology
+# v0.6 dealer archive / v0.5 structural and economy methodology
 
 ## Common analysis window
 
@@ -62,7 +62,7 @@ Back-test improvement is descriptive, not a guarantee. Where structural MAE
 does not beat the best naïve benchmark, the app says so. v0.2 publishes neither
 an upcoming-tender probability nor a composite Dealer Pressure Index.
 
-## v0.3 dealer experiment contract
+## v0.6 dealer experiment contract
 
 The experiment predicts the already out-of-sample structural model's residual
 using only dealer features from earlier tender cutoffs. It uses an expanding
@@ -77,8 +77,10 @@ availability evidence; `retrieved_at` records the later research collection.
 PDF checksums and source URLs make that assumption auditable. This is weaker
 than a prospectively frozen archive and must be followed by live frozen
 validation before any calibrated probability or dealer index is published.
-Date-only archive availability is assigned to end-of-day Singapore time, so a
-document dated on a tender opening day cannot enter that noon cutoff.
+Date-only historical archive availability is assigned to end-of-day Singapore
+time, so a document dated on a tender opening day cannot enter that noon cutoff.
+When contemporaneous collection directly proves an earlier public time, that
+recorded collection timestamp is used instead.
 
 ## v0.5 economy and financial-markets contract
 

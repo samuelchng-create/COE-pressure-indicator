@@ -26,11 +26,18 @@ def main() -> None:
     assert validated["market_share_weight"].between(0, 1).all()
     assert (validated["available_at"] <= validated["retrieved_at"]).all()
     assert validated["advertised_price"].between(80_000, 1_500_000).all()
+    assert len(validated) == 997
+    assert set(validated["brand"]) == {
+        "BYD", "GAC", "Honda", "Hyundai", "Kia", "Mazda", "Nissan", "Subaru", "Toyota"
+    }
 
     manifest = pd.read_csv(ROOT / "data" / "sgcarmart_source_manifest_2024_2026.csv")
     assert not manifest.duplicated(["dealer_id", "document_date"]).any()
     assert manifest["http_status"].astype(str).eq("200").all()
     assert manifest["sha256"].str.fullmatch(r"[0-9a-f]{64}").all()
+    assert manifest["error"].eq("none").all()
+    assert manifest["brand"].nunique() == 12
+    assert len(manifest) == 863
 
     metrics = pd.read_csv(ROOT / "data" / "dealer_backtest_metrics.csv")
     assert set(metrics["category"]) == {"Category A", "Category B"}

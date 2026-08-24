@@ -25,7 +25,7 @@ from economic_features import (
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.5 post-policy comparison: structural + dealer archive + economy/markets • "
+    f"v0.6 dealer-archive expansion + v0.5 post-policy structural/economy comparison • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -136,17 +136,22 @@ with tabs[3]:
     )
     dataset_path = Path(__file__).parent / "data" / "dealer_observations_sgcarmart_2024_2026.csv"
     metrics_path = Path(__file__).parent / "data" / "dealer_backtest_metrics.csv"
+    dealer_manifest_path = Path(__file__).parent / "data" / "sgcarmart_source_manifest_2024_2026.csv"
     if dataset_path.exists():
         archive = pd.read_csv(dataset_path)
         validated_archive, archive_errors = validate_dealer_observations(archive)
         if archive_errors:
             st.error("The bundled SGCarMart dataset failed validation:\n\n- " + "\n- ".join(archive_errors))
         else:
-            a1, a2, a3, a4 = st.columns(4)
-            a1.metric("Eligible observations", f"{len(validated_archive):,}")
-            a2.metric("Eligible brands", f"{validated_archive['brand'].nunique():,}")
-            a3.metric("Cat A rows", f"{(validated_archive['category'] == 'Category A').sum():,}")
-            a4.metric("Cat B rows", f"{(validated_archive['category'] == 'Category B').sum():,}")
+            dealer_manifest = pd.read_csv(dealer_manifest_path) if dealer_manifest_path.exists() else pd.DataFrame()
+            source_pdf_count = len(dealer_manifest) if not dealer_manifest.empty else 0
+            source_brand_count = dealer_manifest["brand"].nunique() if not dealer_manifest.empty else 0
+            a1, a2, a3, a4, a5 = st.columns(5)
+            a1.metric("Source PDFs", f"{source_pdf_count:,}")
+            a2.metric("Source brands", f"{source_brand_count:,}")
+            a3.metric("Eligible brands", f"{validated_archive['brand'].nunique():,}")
+            a4.metric("Cat A rows", f"{(validated_archive['category'] == 'Category A').sum():,}")
+            a5.metric("Cat B rows", f"{(validated_archive['category'] == 'Category B').sum():,}")
             st.download_button(
                 "Download validated SGCarMart dealer observations",
                 archive.to_csv(index=False).encode(),
@@ -155,7 +160,8 @@ with tabs[3]:
             )
             st.caption(
                 f"Dated observations: {validated_archive['observed_at'].min().date()} to {validated_archive['observed_at'].max().date()}. "
-                "The source corpus covers six brands; eligible rows from BYD, Honda and Toyota require an explicit Cat A/B page label and extracted advertised prices."
+                f"The source corpus covers {source_brand_count} brands; eligible rows from "
+                f"{', '.join(sorted(validated_archive['brand'].unique()))} require an explicit Cat A/B page label and extracted advertised prices."
             )
     if metrics_path.exists():
         metrics = pd.read_csv(metrics_path)
@@ -274,7 +280,7 @@ with tabs[4]:
     )
 
 with tabs[5]:
-    st.subheader("v0.5 post-policy audit trail")
+    st.subheader("v0.6 dealer archive / v0.5 post-policy audit trail")
     st.markdown(
         f"""
 - **Common analysis boundary:** all charts, model fitting, tuning, intervals and benchmark metrics start in October 2015. Pre-October-2015 tenders are excluded for policy-regime reliability and comparability.
@@ -286,7 +292,8 @@ with tabs[5]:
 - **No current-tender outcome leakage:** premiums, bids, bid-to-quota ratios, excess demand, momentum and Cat E outcome signals are lagged by at least one completed tender.
 - **Announced supply assumption:** current-tender category and Cat E quotas are treated as known before bidding. The results dataset lacks publication timestamps, so future frozen forecasts should archive the corresponding LTA announcement.
 - **No calibrated Dealer Pressure Index:** no arbitrary composite weights or probabilities are published.
-- **Dealer archive reconstruction:** date-only SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date; the later research retrieval timestamp and PDF checksum remain recorded for audit.
+- **Dealer archive reconstruction:** date-only historical SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date. If contemporaneous collection proves an earlier public time, that observed time is used; retrieval timestamps and PDF checksums remain recorded for audit.
+- **Expanded dealer coverage:** the v0.6 source corpus covers 12 authorised-dealer brands. A brand contributes model rows only when its page layout passes the same explicit Cat A/B label and advertised-price rules; categories are never inferred from vehicle models.
 - **Dealer-model eligibility:** only explicitly labelled Cat A/B pages with extracted advertised prices enter the incremental test. Unclassified pages remain visible for review; Cat D has no SGCarMart car-price-list dealer signal.
 - **Economy/markets experiment:** the candidate model adds 13 as-of variables under `{ECONOMIC_MODEL_VERSION}` and is evaluated at the same outer forecast origins as the structural model.
 - **Market-data timing:** daily FX, volatility, interest-rate and oil observations are treated as available in Singapore only on the following calendar day. Twenty-one-trading-day changes use data at least 30 calendar days earlier.

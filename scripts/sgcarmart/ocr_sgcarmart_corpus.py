@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess
 import tempfile
 import time
@@ -17,6 +18,7 @@ def main() -> None:
     parser.add_argument("--ocr-binary", default="/private/tmp/sgc-ocr")
     parser.add_argument("--follow", action="store_true")
     parser.add_argument("--idle-rounds", type=int, default=10)
+    parser.add_argument("--workers", type=int, default=1)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
 
@@ -36,7 +38,8 @@ def main() -> None:
             time.sleep(10)
             continue
         idle = 0
-        for pdf, target in pending:
+        def process(item: tuple[Path, Path]) -> tuple[Path, bool]:
+            pdf, target = item
             target.parent.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(prefix="sgcarmart-ocr-") as tmp:
                 prefix = Path(tmp) / "page"
@@ -49,7 +52,7 @@ def main() -> None:
                 images = sorted(Path(tmp).glob("page-*.png"))
                 if render.returncode != 0 or not images:
                     target.write_text(f"###ERROR render_failed returncode={render.returncode}\n", encoding="utf-8")
-                    continue
+                    return pdf, False
                 result = subprocess.run(
                     [args.ocr_binary, *map(str, images)],
                     capture_output=True,
@@ -58,10 +61,17 @@ def main() -> None:
                 )
                 if result.returncode != 0 and not result.stdout:
                     target.write_text(f"###ERROR ocr_failed {result.stderr}\n", encoding="utf-8")
-                    continue
+                    return pdf, False
                 target.write_text(result.stdout, encoding="utf-8")
-            processed += 1
-            print(f"ocr={processed} {pdf.relative_to(args.corpus)}", flush=True)
+            return pdf, True
+
+        with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
+            futures = [executor.submit(process, item) for item in pending]
+            for future in as_completed(futures):
+                pdf, succeeded = future.result()
+                processed += 1
+                status = "ocr" if succeeded else "ocr_error"
+                print(f"{status}={processed} {pdf.relative_to(args.corpus)}", flush=True)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.5 post-policy comparison
+# Singapore COE Pressure Indicator — v0.6 expanded dealer archive
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -12,10 +12,11 @@ Every chart, training window, tuning fold, uncertainty interval and benchmark
 now uses a common October 2015 analysis start. Earlier tenders are excluded to
 avoid mixing materially different policy regimes into the reported results.
 
-## v0.3 SGCarMart dealer archive
+## v0.6 SGCarMart dealer archive
 
-- Reconstructs dated 2024–2026 authorised-dealer price-list signals for BYD,
-  Toyota, Mercedes-Benz, BMW, Honda and Tesla from SGCarMart's public archive.
+- Reconstructs dated 2024–2026 authorised-dealer price-list signals for BMW,
+  BYD, GAC, Honda, Hyundai, Kia, Mazda, Mercedes-Benz, Nissan, Subaru, Tesla
+  and Toyota from SGCarMart's public archive.
 - Stores each source URL, PDF date, later research retrieval timestamp and
   SHA-256 checksum. `available_at` is separate from `retrieved_at` so the
   retrospective as-of assumption is explicit and auditable.
@@ -35,10 +36,11 @@ avoid mixing materially different policy regimes into the reported results.
 - Excludes Category D because SGCarMart's car price-list archive is not a
   motorcycle dealer archive.
 
-The frozen v0.3 archive contains 441 source PDFs, 1,458 auditable page rows and
-403 model-eligible observations. Over 51 paired forecasts per category, dealer
-signals improved Cat A MAE by 3.73% but worsened Cat B MAE by 10.37%. The app
-shows both results and does not treat the Cat A result as calibrated.
+The v0.6 archive contains 863 source PDFs, 2,629 auditable page rows and 997
+model-eligible observations from nine brands. Over 51 paired forecasts per
+category, dealer signals worsened Cat A MAE by 2.61% and Cat B MAE by 10.32%.
+The app publishes this negative result and does not claim a calibrated dealer
+forecasting edge.
 
 ## v0.5 economy and financial-markets experiment
 
@@ -94,6 +96,7 @@ pytest -q
 python scripts/run_backtest.py
 python scripts/build_tender_schedule.py
 python scripts/run_dealer_experiment.py
+python scripts/validate_sgcarmart_dataset.py
 python scripts/build_economic_features.py
 python scripts/run_economic_experiment.py
 python scripts/validate_economic_dataset.py

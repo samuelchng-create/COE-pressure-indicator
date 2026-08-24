@@ -12,7 +12,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-MODEL_VERSION = "v0.5-dealer-residual-ridge-post-2015-1"
+MODEL_VERSION = "v0.6-dealer-residual-ridge-expanded-brands-post-2015-1"
 DEALER_FEATURE_COLUMNS = [
     "dealer_observation_count",
     "dealer_brand_count",

@@ -55,10 +55,12 @@ def category_for_page(lines: list[dict]) -> tuple[str, str]:
         if line["y"] < 0.70:
             continue
         heading = line["text"].upper().strip()
-        if re.match(r"^CAT(?:EGORY)?\s*A\b", heading):
-            cats.add("A")
-        if re.match(r"^CAT(?:EGORY)?\s*B\b", heading):
-            cats.add("B")
+        # Authorised dealers use variants such as "Category A", "CAT B MODELS",
+        # "PRICE LIST: CATEGORY A" and "Hybrid - Category B". Keep the match
+        # restricted to short top-of-page label lines so explanatory footers do
+        # not create a category assignment.
+        if len(heading) <= 80:
+            cats.update(re.findall(r"\bCAT(?:EGORY)?\s*([AB])\b", heading))
     if cats == {"A"} or cats == {"B"}:
         return next(iter(cats)), "explicit_page_label"
     if cats == {"A", "B"}:
