@@ -13,11 +13,20 @@ from coe_model import (
     walk_forward_backtest,
 )
 from dealer_signals import empty_dealer_template, validate_dealer_observations
+from economic_features import (
+    ECONOMIC_FEATURE_AVAILABILITY,
+    ECONOMIC_FEATURE_COLUMNS,
+    ECONOMIC_MODEL_VERSION,
+    validate_economic_features,
+)
 
 
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
-st.caption(f"v0.2 structural model + v0.3 dealer archive experiment • {MODEL_VERSION} • experimental, uncalibrated public-interest analysis")
+st.caption(
+    f"v0.2 structural model + v0.3 dealer archive + v0.4 economy/markets experiment • "
+    f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
+)
 
 DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
 URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
@@ -41,7 +50,7 @@ except Exception as error:
     st.error(f"Could not load or validate the official data.gov.sg dataset: {error}")
     st.stop()
 
-tabs = st.tabs([*CATEGORIES, "Dealer-signal experiment", "Methodology & audit"])
+tabs = st.tabs([*CATEGORIES, "Dealer-signal experiment", "Economy & markets", "Methodology & audit"])
 
 for tab, category in zip(tabs[:3], CATEGORIES):
     with tab:
@@ -189,9 +198,71 @@ Dealer features are accepted only when source URL, observation time, evidenced a
     )
 
 with tabs[4]:
+    st.subheader("Economic and financial-market variables")
+    st.write(
+        "The candidate v0.4 model adds Singapore growth, inflation and unemployment plus "
+        "SGD/USD, global equities, market volatility, long-term interest rates and Brent oil. The existing "
+        "structural forecast remains primary unless the augmented model improves frozen out-of-sample results."
+    )
+    economic_path = Path(__file__).parent / "data" / "economic_financial_features.csv"
+    economic_metrics_path = Path(__file__).parent / "data" / "economic_backtest_metrics.csv"
+    source_manifest_path = Path(__file__).parent / "data" / "economic_financial_source_manifest.csv"
+    if economic_path.exists():
+        economic_raw = pd.read_csv(economic_path)
+        economic, economic_errors = validate_economic_features(economic_raw)
+        if economic_errors:
+            st.error("The bundled economic dataset failed validation:\n\n- " + "\n- ".join(economic_errors))
+        else:
+            latest_economic = economic.iloc[-1]
+            e1, e2, e3, e4, e5 = st.columns(5)
+            e1.metric("SGD per US dollar", f"{latest_economic.sgd_per_usd:.4f}")
+            e2.metric("VIX", f"{latest_economic.vix:.1f}")
+            e3.metric("US 10-year yield", f"{latest_economic.us_10y_yield:.2f}%")
+            e4.metric("Brent crude", f"US${latest_economic.brent_usd:.2f}")
+            e5.metric("Nasdaq 1-month", f"{latest_economic.nasdaq_return_21d:+.1%}")
+            e6, e7, e8 = st.columns(3)
+            e6.metric("Singapore real GDP YoY", f"{latest_economic.sg_real_gdp_yoy:.1f}%")
+            e7.metric("Singapore CPI YoY", f"{latest_economic.sg_cpi_yoy:.1f}%")
+            e8.metric("Singapore unemployment", f"{latest_economic.sg_unemployment_rate:.1f}%")
+            st.download_button(
+                "Download tender-aligned economic features",
+                economic_raw.to_csv(index=False).encode(),
+                "economic_financial_features.csv",
+                "text/csv",
+            )
+            st.caption(
+                f"{len(economic):,} conservative tender cutoffs with {len(ECONOMIC_FEATURE_COLUMNS)} variables. "
+                "Daily U.S.-market observations are delayed to the following Singapore day; macro series use fixed publication buffers."
+            )
+    if economic_metrics_path.exists():
+        economic_metrics = pd.read_csv(economic_metrics_path)
+        economy_model = economic_metrics[economic_metrics["model"].eq("structural_plus_economy")]
+        if not economy_model.empty:
+            st.subheader("Paired expanding-window test")
+            for row in economy_model.itertuples(index=False):
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric(f"{row.category} forecasts", f"{int(row.observations):,}")
+                c2.metric("Economy-model MAE", f"S${row.MAE:,.0f}")
+                c3.metric("MAE vs structural", f"{row.MAE_improvement_vs_structural:+.1%}")
+                c4.metric("Direction accuracy", f"{row.direction_accuracy:.1%}")
+            if (economy_model["MAE_improvement_vs_structural"] <= 0).all():
+                st.warning(
+                    "The full economy/markets block worsened MAE for all three categories in this historical test. "
+                    "The variables are retained for research, but v0.4 is not promoted as the primary forecast."
+                )
+            st.dataframe(economic_metrics, hide_index=True, width="stretch")
+    if source_manifest_path.exists():
+        with st.expander("Sources and historical availability rules"):
+            st.dataframe(pd.read_csv(source_manifest_path), hide_index=True, width="stretch")
+    st.info(
+        "Macroeconomic tables are current-vintage series and may contain later revisions. Conservative release lags "
+        "prevent use of the current period too early, but they do not recreate true historical data vintages."
+    )
+
+with tabs[5]:
     st.subheader("v0.2 audit trail")
     st.markdown(
-        """
+        f"""
 - **Fixed parsing defect:** official values containing commas were previously coerced to missing values, causing recent charts and results to be unreliable.
 - **Target:** one-tender-ahead change in COE premium, modelled separately for Categories A, B and D.
 - **Validation:** expanding walk-forward evaluation with a minimum 60-tender training window. Ridge regularization is selected inside each training window using time-ordered inner folds.
@@ -202,15 +273,23 @@ with tabs[4]:
 - **No calibrated Dealer Pressure Index:** no arbitrary composite weights or probabilities are published in v0.2.
 - **Dealer archive reconstruction:** date-only SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date; the later research retrieval timestamp and PDF checksum remain recorded for audit.
 - **Dealer-model eligibility:** only explicitly labelled Cat A/B pages with extracted advertised prices enter the incremental test. Unclassified pages remain visible for review; Cat D has no SGCarMart car-price-list dealer signal.
+- **Economy/markets experiment:** the candidate model adds 13 as-of variables under `{ECONOMIC_MODEL_VERSION}` and is evaluated at the same outer forecast origins as the structural model.
+- **Market-data timing:** daily FX, volatility, interest-rate and oil observations are treated as available in Singapore only on the following calendar day. Twenty-one-trading-day changes use data at least 30 calendar days earlier.
+- **Macro-data timing and revision caveat:** CPI is delayed 45 days; GDP and unemployment are delayed 75 days. SingStat tables are current-vintage and may include later revisions, so the experiment is not a real-time-vintage back-test.
 """
     )
     availability = pd.DataFrame(
-        [{"Feature family": family, "Availability rule": rule} for family, rule in FEATURE_AVAILABILITY.items()]
+        [
+            {"Feature family": family, "Availability rule": rule}
+            for family, rule in {**FEATURE_AVAILABILITY, **ECONOMIC_FEATURE_AVAILABILITY}.items()
+        ]
     )
     st.dataframe(availability, hide_index=True, width="stretch")
     st.markdown(
         "Sources: [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) • "
         "[LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) • "
-        "[SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists)"
+        "[SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) • "
+        "[SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) • "
+        "[FRED economic data](https://fred.stlouisfed.org/)"
     )
     st.caption("Experimental analysis, not financial advice. Model and methodology are disclosed so negative results remain visible.")

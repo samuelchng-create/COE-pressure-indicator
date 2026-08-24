@@ -18,6 +18,8 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from economic_features import ECONOMIC_MODEL_VERSION, merge_economic_features
+
 
 CATEGORIES = ("Category A", "Category B", "Category D")
 MODEL_VERSION = "v0.2-structural-ridge-change-1"
@@ -72,7 +74,11 @@ def prepare_coe_data(records: Iterable[dict] | pd.DataFrame) -> pd.DataFrame:
     return frame.reset_index(drop=True)
 
 
-def build_feature_frame(data: pd.DataFrame, category: str) -> pd.DataFrame:
+def build_feature_frame(
+    data: pd.DataFrame,
+    category: str,
+    economic_features: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     """Build features whose values are available before each target tender.
 
     Outcome variables (premium, bids and demand pressure) are shifted.  The
@@ -120,7 +126,10 @@ def build_feature_frame(data: pd.DataFrame, category: str) -> pd.DataFrame:
     result["month_sin"] = np.sin(2 * np.pi * months / 12)
     result["month_cos"] = np.cos(2 * np.pi * months / 12)
     result["second_exercise"] = (bid_numbers == 2).astype(float)
-    return result.replace([np.inf, -np.inf], np.nan).dropna().reset_index()
+    frame = result.replace([np.inf, -np.inf], np.nan).dropna().reset_index()
+    if economic_features is not None:
+        frame = merge_economic_features(frame, economic_features)
+    return frame
 
 
 NON_FEATURE_COLUMNS = {
@@ -173,6 +182,7 @@ def _conformal_radius(residuals: list[float], coverage: float) -> float:
 def walk_forward_backtest(
     data: pd.DataFrame,
     category: str,
+    economic_features: pd.DataFrame | None = None,
     min_train: int = 60,
     interval_coverage: float = 0.80,
     min_calibration: int = 20,
@@ -180,7 +190,7 @@ def walk_forward_backtest(
     inner_splits: int = 4,
 ) -> pd.DataFrame:
     """Run an expanding-window, nested-tuning, one-step-ahead back-test."""
-    frame = build_feature_frame(data, category)
+    frame = build_feature_frame(data, category, economic_features=economic_features)
     if len(frame) <= min_train:
         return pd.DataFrame()
     columns = feature_columns(frame)
@@ -205,7 +215,7 @@ def walk_forward_backtest(
         rows.append(
             {
                 "category": category,
-                "model_version": MODEL_VERSION,
+                "model_version": ECONOMIC_MODEL_VERSION if economic_features is not None else MODEL_VERSION,
                 "tender_id": test.iloc[0]["tender_id"],
                 "display_date": test.iloc[0]["display_date"],
                 "train_end_tender": train.iloc[-1]["tender_id"],

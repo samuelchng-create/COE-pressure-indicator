@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.2 structural + v0.3 dealer experiment
+# Singapore COE Pressure Indicator — v0.2 structural + v0.3 dealer + v0.4 economy experiment
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -36,6 +36,23 @@ The frozen v0.3 archive contains 441 source PDFs, 1,458 auditable page rows and
 signals improved Cat A MAE by 5.45% but worsened Cat B MAE by 8.97%. The app
 shows both results and does not treat the Cat A result as calibrated.
 
+## v0.4 economy and financial-markets experiment
+
+- Adds 13 tender-aligned variables: SGD/USD level and 21-day change, VIX level
+  and change, US 10-year Treasury yield and change, Brent price and return,
+  Nasdaq Composite level and return,
+  Singapore real-GDP growth, CPI inflation and unemployment.
+- Treats daily market observations as available in Singapore only on the next
+  calendar day. Monthly CPI uses a 45-day publication buffer; quarterly GDP
+  and unemployment use 75 days.
+- Runs a paired expanding-window comparison at the same 331 forecast origins
+  per category. The full block worsened MAE by 0.43% for Cat A, 0.30% for Cat B
+  and 2.14% for Cat D, so it is visible in the app but is not promoted over the
+  structural model.
+- Uses current-vintage SingStat macro tables. The publication buffers prevent
+  use of the current period too early, but historical revisions remain a known
+  limitation until a real-time vintage archive is obtained.
+
 ## v0.2 structural method
 
 - Predicts the next tender's premium change separately by category.
@@ -52,7 +69,8 @@ shows both results and does not treat the Cat A result as calibrated.
   only.
 
 See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and
-[docs/DEALER_SIGNALS.md](docs/DEALER_SIGNALS.md).
+[docs/DEALER_SIGNALS.md](docs/DEALER_SIGNALS.md), plus
+[docs/ECONOMIC_FEATURES.md](docs/ECONOMIC_FEATURES.md).
 
 ## Run locally
 
@@ -68,6 +86,9 @@ pytest -q
 python scripts/run_backtest.py
 python scripts/build_tender_schedule.py
 python scripts/run_dealer_experiment.py
+python scripts/build_economic_features.py
+python scripts/run_economic_experiment.py
+python scripts/validate_economic_dataset.py
 ```
 
 ## Deployment

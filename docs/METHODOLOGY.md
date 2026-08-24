@@ -1,4 +1,4 @@
-# v0.2 structural methodology and v0.3 dealer experiment
+# v0.2 structural methodology, v0.3 dealer and v0.4 economy experiments
 
 ## MVP audit findings
 
@@ -70,3 +70,25 @@ than a prospectively frozen archive and must be followed by live frozen
 validation before any calibrated probability or dealer index is published.
 Date-only archive availability is assigned to end-of-day Singapore time, so a
 document dated on a tender opening day cannot enter that noon cutoff.
+
+## v0.4 economy and financial-markets contract
+
+The economy variant fits the same standardized Ridge change model with 13
+additional variables. Structural-only and augmented forecasts use identical
+outer forecast origins and separately select regularization inside each
+training window. The primary structural forecast is not replaced unless the
+augmented model improves frozen out-of-sample error.
+
+Daily SGD/USD, Nasdaq Composite, VIX, US 10-year Treasury and Brent observations are assigned an
+availability timestamp of noon Singapore time on the following calendar day.
+Changes compare the last observation before the tender cutoff with the last
+observation at least 30 calendar days earlier. Singapore CPI is treated as
+available 45 days after month-end; real-GDP growth and unemployment are treated
+as available 75 days after quarter-end.
+
+These macro rules are conservative publication buffers, not reconstructed
+release timestamps. SingStat serves current-vintage data that may contain later
+revisions. Therefore the v0.4 results are a revision-risk sensitivity test, not
+a fully vintage-correct real-time back-test. The first paired test covered 331
+forecasts per category and worsened MAE for Cat A, B and D, so v0.4 remains a
+visible research candidate rather than the deployed primary model.
