@@ -1,118 +1,167 @@
-import streamlit as st
 import pandas as pd
-import numpy as np
 import requests
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.linear_model import Ridge
+import streamlit as st
 
-st.set_page_config(page_title='Singapore COE Pressure Index', layout='wide')
-st.title('Singapore COE Pressure Index')
-st.caption('Experimental public-interest tracker • Structural back-test + dealer-signal layer')
+from coe_model import (
+    CATEGORIES,
+    FEATURE_AVAILABILITY,
+    MODEL_VERSION,
+    prepare_coe_data,
+    summarize_backtest,
+    walk_forward_backtest,
+)
+from dealer_signals import empty_dealer_template, validate_dealer_observations
 
-DATASET='d_69b3380ad7e51aff3a7dcc84eba52b8a'
-URL=f'https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000'
+
+st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
+st.title("Singapore COE Pressure Indicator")
+st.caption(f"v0.2 • {MODEL_VERSION} • experimental, uncalibrated public-interest analysis")
+
+DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
+URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
+
 
 @st.cache_data(ttl=3600)
-def load_coe():
-    r=requests.get(URL,timeout=20); r.raise_for_status()
-    rec=r.json()['result']['records']
-    df=pd.DataFrame(rec)
-    # tolerate API naming/case differences
-    df.columns=[c.lower().strip().replace(' ','_') for c in df.columns]
-    for c in ['quota','bids_success','bids_received','premium']:
-        df[c]=pd.to_numeric(df[c],errors='coerce')
-    df['bidding_no']=pd.to_numeric(df['bidding_no'],errors='coerce')
-    df['date']=pd.to_datetime(df['month'].astype(str)+'-01') + pd.to_timedelta((df['bidding_no'].fillna(1)-1)*14,unit='D')
-    return df.sort_values(['vehicle_class','date'])
+def load_coe() -> pd.DataFrame:
+    response = requests.get(URL, timeout=20)
+    response.raise_for_status()
+    return prepare_coe_data(response.json()["result"]["records"])
 
-def features(g):
-    x=g.copy().sort_values('date')
-    x['bid_pressure']=x['bids_received']/x['quota']
-    x['excess_demand']=(x['bids_received']-x['quota'])/x['quota']
-    x['premium_lag1']=x['premium'].shift(1)
-    x['premium_lag2']=x['premium'].shift(2)
-    x['momentum']=x['premium'].shift(1)-x['premium'].shift(2)
-    x['bid_pressure_lag1']=x['bid_pressure'].shift(1)
-    x['quota_lag1']=x['quota'].shift(1)
-    x['month_num']=x['date'].dt.month
-    return x.dropna().copy()
 
-def walk_forward(g,min_train=36):
-    x=features(g)
-    cols=['premium_lag1','premium_lag2','momentum','bid_pressure_lag1','quota_lag1','month_num']
-    preds=[]
-    for i in range(min_train,len(x)):
-        train=x.iloc[:i]; test=x.iloc[[i]]
-        model=Ridge(alpha=10.0)
-        model.fit(train[cols],train['premium'])
-        p=float(model.predict(test[cols])[0])
-        preds.append({'date':test.iloc[0]['date'],'actual':float(test.iloc[0]['premium']),'predicted':p,
-                      'prev':float(test.iloc[0]['premium_lag1'])})
-    return pd.DataFrame(preds)
+@st.cache_data(show_spinner=False)
+def run_backtest(data: pd.DataFrame, category: str) -> pd.DataFrame:
+    return walk_forward_backtest(data, category)
 
-def metrics(bt):
-    if bt.empty: return {}
-    mae=mean_absolute_error(bt.actual,bt.predicted)
-    rmse=mean_squared_error(bt.actual,bt.predicted)**0.5
-    naive=mean_absolute_error(bt.actual,bt.prev)
-    actual_dir=np.sign(bt.actual-bt.prev); pred_dir=np.sign(bt.predicted-bt.prev)
-    acc=float((actual_dir==pred_dir).mean())
-    return {'MAE':mae,'RMSE':rmse,'Naive MAE':naive,'Direction accuracy':acc,'MAE uplift vs naive':(naive-mae)/naive if naive else np.nan}
 
 try:
-    df=load_coe()
-except Exception as e:
-    st.error(f'Could not load data.gov.sg data: {e}')
+    df = load_coe()
+except Exception as error:
+    st.error(f"Could not load or validate the official data.gov.sg dataset: {error}")
     st.stop()
 
-cats=['Category A','Category B','Category D']
-tabs=st.tabs(cats+['Dealer signals','Methodology'])
-for tab,cat in zip(tabs[:3],cats):
+tabs = st.tabs([*CATEGORIES, "Dealer-signal experiment", "Methodology & audit"])
+
+for tab, category in zip(tabs[:3], CATEGORIES):
     with tab:
-        g=df[df.vehicle_class==cat]
-        latest=g.iloc[-1]
-        prev=g.iloc[-2]
-        pressure=latest.bids_received/latest.quota
-        c1,c2,c3,c4=st.columns(4)
-        c1.metric('Latest COE',f"S${latest.premium:,.0f}",f"{latest.premium-prev.premium:+,.0f}")
-        c2.metric('Bid / quota',f"{pressure:.2f}×")
-        c3.metric('Bids received',f"{latest.bids_received:,.0f}")
-        c4.metric('Quota',f"{latest.quota:,.0f}")
-        chart=g.set_index('date')[['premium']].rename(columns={'premium':'COE premium'})
-        st.line_chart(chart)
-        bt=walk_forward(g)
-        m=metrics(bt)
-        st.subheader('Walk-forward structural back-test')
-        a,b,c,d=st.columns(4)
-        a.metric('Direction accuracy',f"{m.get('Direction accuracy',np.nan):.1%}")
-        b.metric('MAE',f"S${m.get('MAE',np.nan):,.0f}")
-        c.metric('Naïve MAE',f"S${m.get('Naive MAE',np.nan):,.0f}")
-        d.metric('MAE improvement',f"{m.get('MAE uplift vs naive',np.nan):.1%}")
-        if not bt.empty:
-            show=bt.set_index('date')[['actual','predicted']].rename(columns={'actual':'Actual','predicted':'Walk-forward forecast'})
-            st.line_chart(show)
-            st.caption('Each prediction is generated using only observations preceding that tender. This is the structural benchmark; dealer signals are evaluated separately.')
+        category_data = df[df["vehicle_class"] == category].sort_values(["month", "bidding_no"])
+        latest = category_data.iloc[-1]
+        previous = category_data.iloc[-2]
+        pressure = latest["bids_received"] / latest["quota"]
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Latest COE", f"S${latest['premium']:,.0f}", f"{latest['premium'] - previous['premium']:+,.0f}")
+        c2.metric("Completed-tender bid / quota", f"{pressure:.2f}×")
+        c3.metric("Bids received", f"{latest['bids_received']:,.0f}")
+        c4.metric("Quota", f"{latest['quota']:,.0f}")
+
+        history = (
+            category_data[["display_date", "premium"]]
+            .dropna()
+            .set_index("display_date")
+            .rename(columns={"premium": "COE premium"})
+        )
+        st.line_chart(history)
+        st.caption("Chart dates approximate tender order (1st and 15th); the source identifies month and exercise number, not closing timestamps.")
+
+        with st.spinner(f"Running leakage-safe {category} walk-forward evaluation…"):
+            backtest = run_backtest(df, category)
+        if backtest.empty:
+            st.warning("Not enough validated history to run this category's back-test.")
+            continue
+        summary = summarize_backtest(backtest)
+        structural = summary.metrics.loc["structural"]
+        best_naive = summary.metrics.loc[summary.best_naive]
+        st.subheader("Expanding-window out-of-sample results")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Direction accuracy", f"{structural['direction_accuracy']:.1%}")
+        m2.metric("MAE", f"S${structural['MAE']:,.0f}")
+        m3.metric("RMSE", f"S${structural['RMSE']:,.0f}")
+        m4.metric("80% interval coverage", f"{summary.interval_coverage:.1%}")
+        n1, n2, n3 = st.columns(3)
+        n1.metric("Best naïve benchmark", summary.best_naive.replace("_", " ").title())
+        n2.metric("MAE improvement vs best naïve", f"{summary.mae_improvement_vs_best_naive:+.1%}")
+        n3.metric("RMSE improvement vs best naïve", f"{summary.rmse_improvement_vs_best_naive:+.1%}")
+        if summary.mae_improvement_vs_best_naive <= 0:
+            st.warning("The structural model does not beat the best naïve MAE in this historical test. It is a research benchmark, not a calibrated forecasting edge.")
+
+        comparison = summary.metrics.copy()
+        comparison.index = comparison.index.str.replace("_", " ").str.title()
+        comparison["MAE"] = comparison["MAE"].map(lambda value: f"S${value:,.0f}")
+        comparison["RMSE"] = comparison["RMSE"].map(lambda value: f"S${value:,.0f}")
+        comparison["direction_accuracy"] = comparison["direction_accuracy"].map(lambda value: f"{value:.1%}")
+        st.dataframe(comparison.rename(columns={"direction_accuracy": "Direction accuracy"}), width="stretch")
+
+        forecast_chart = (
+            backtest[["display_date", "actual", "structural", "lower", "upper"]]
+            .dropna(subset=["actual", "structural"])
+            .set_index("display_date")
+            .rename(
+                columns={
+                    "actual": "Actual",
+                    "structural": "Structural forecast",
+                    "lower": "80% lower",
+                    "upper": "80% upper",
+                }
+            )
+        )
+        st.line_chart(forecast_chart)
+        st.caption(
+            f"{summary.observations} one-tender-ahead predictions. Regularization is selected in nested time-ordered folds; intervals use only earlier forecast errors. "
+            f"Best naïve MAE: S${best_naive['MAE']:,.0f}."
+        )
 
 with tabs[3]:
-    st.subheader('Dealer Pressure observations')
-    st.write('Upload a CSV of weekly dealer observations. This layer is deliberately separate so we can test whether dealer behaviour adds out-of-sample predictive value beyond the structural benchmark.')
-    template=pd.DataFrame(columns=['observation_date','category','brand','model','advertised_price','coe_rebate_level','guaranteed_coe','number_of_bids','cash_discount','finance_rebate','trade_in_bonus','other_incentive_value','promotion_deadline','notes'])
-    st.download_button('Download dealer-data template',template.to_csv(index=False).encode(),'dealer_observations_template.csv','text/csv')
-    up=st.file_uploader('Upload dealer observations CSV',type='csv')
-    if up:
-        dd=pd.read_csv(up)
-        st.dataframe(dd,use_container_width=True)
-        st.info('Next model version will derive dealer-pressure features and compare structural-only vs structural+dealer walk-forward performance.')
+    st.subheader("2024–2026 dealer-signal research dataset")
+    st.write(
+        "This is an ingestion and validation layer, not a published Dealer Pressure Index. "
+        "Weights and probabilities remain uncalibrated until a frozen out-of-sample comparison demonstrates incremental value."
+    )
+    template = empty_dealer_template()
+    st.download_button(
+        "Download versioned dealer-observation template",
+        template.to_csv(index=False).encode(),
+        "dealer_observations_v0_2.csv",
+        "text/csv",
+    )
+    upload = st.file_uploader("Validate dealer observations", type="csv")
+    if upload is not None:
+        uploaded = pd.read_csv(upload)
+        validated, errors = validate_dealer_observations(uploaded)
+        if errors:
+            st.error("Validation failed:\n\n- " + "\n- ".join(errors))
+        else:
+            st.success(f"Validated {len(validated):,} observations. No model uplift claim has been made.")
+            st.dataframe(validated.head(100), width="stretch")
+    st.markdown(
+        """
+The experiment will compare two forecasts at exactly the same tender cutoffs:
+
+1. **Structural-only:** the model reported in the category tabs.
+2. **Structural + dealer signals:** advertised-price changes, COE rebates, guaranteed-COE terms, incentives, promotion urgency/roadshows, and market-share weights observed before the frozen cutoff.
+
+Dealer features are accepted only when source URL, observation time, retrieval time and category are present. The collection workflow and data dictionary are versioned in the repository.
+"""
+    )
 
 with tabs[4]:
-    st.subheader('Methodological principles')
-    st.markdown('''
-- **No hindsight:** walk-forward validation only.
-- **Benchmark first:** forecasts must beat persistence (next COE = current COE).
-- **Dealer uplift test:** dealer variables are retained only if they improve out-of-sample performance.
-- **Separate categories:** A, B and D are modelled independently.
-- **Transparent uncertainty:** eventual public forecasts should be ranges/probabilities, not false-precision point estimates.
-- **Frozen prospective forecasts:** once public, every forecast should be timestamped and retained by model version.
-''')
-    st.caption('Experimental analysis, not financial advice. Source: LTA COE Bidding Results / Prices via data.gov.sg.')
+    st.subheader("v0.2 audit trail")
+    st.markdown(
+        """
+- **Fixed parsing defect:** official values containing commas were previously coerced to missing values, causing recent charts and results to be unreliable.
+- **Target:** one-tender-ahead change in COE premium, modelled separately for Categories A, B and D.
+- **Validation:** expanding walk-forward evaluation with a minimum 60-tender training window. Ridge regularization is selected inside each training window using time-ordered inner folds.
+- **Benchmarks:** persistence, historical mean drift and the premium from two tenders earlier.
+- **Uncertainty:** an 80% prequential conformal interval based only on absolute errors from earlier out-of-sample forecasts. Coverage is empirical, not guaranteed prospectively.
+- **No current-tender outcome leakage:** premiums, bids, bid-to-quota ratios, excess demand, momentum and Cat E outcome signals are lagged by at least one completed tender.
+- **Announced supply assumption:** current-tender category and Cat E quotas are treated as known before bidding. The results dataset lacks publication timestamps, so future frozen forecasts should archive the corresponding LTA announcement.
+- **No calibrated Dealer Pressure Index:** no arbitrary composite weights or probabilities are published in v0.2.
+"""
+    )
+    availability = pd.DataFrame(
+        [{"Feature family": family, "Availability rule": rule} for family, rule in FEATURE_AVAILABILITY.items()]
+    )
+    st.dataframe(availability, hide_index=True, width="stretch")
+    st.markdown(
+        "Sources: [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) • "
+        "[LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html)"
+    )
+    st.caption("Experimental analysis, not financial advice. Model and methodology are disclosed so negative results remain visible.")
