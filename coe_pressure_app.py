@@ -103,6 +103,11 @@ SOURCE_TO_BRAND_GROUP = {
     for source in sources
 }
 
+
+def format_signed_sgd(value: float) -> str:
+    sign = "+" if value >= 0 else "−"
+    return f"{sign}S${abs(value):,.0f}"
+
 DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
 URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
 
@@ -172,11 +177,12 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         p2.metric("Increase probability", f"{next_forecast.probabilities['Increase']:.1%}", help=METRIC_HELP["outcome_probability"])
         p3.metric("Stay probability", f"{next_forecast.probabilities['Stay']:.1%}", help=METRIC_HELP["outcome_probability"])
         p4.metric("Decrease probability", f"{next_forecast.probabilities['Decrease']:.1%}", help=METRIC_HELP["outcome_probability"])
-        p5.metric("Predicted change", f"S${next_forecast.predicted_change:+,.0f}", help=METRIC_HELP["predicted_change"])
+        p5.metric("Predicted change", format_signed_sgd(next_forecast.predicted_change), help=METRIC_HELP["predicted_change"])
         st.caption(
-            f"Target exercise: {next_forecast.tender_id}. Increase means above +S$1,000; Stay means within ±S$1,000 inclusive; "
-            f"Decrease means below −S$1,000. Probabilities use {next_forecast.calibration_observations} earlier out-of-sample residuals under "
-            f"{DIRECTION_PROBABILITY_VERSION}. Supply assumption: {next_forecast.quota_assumption.lower()}."
+            f"Target exercise: {next_forecast.tender_id}. Increase means above +S\\$1,000; Stay means within ±S\\$1,000 inclusive; "
+            f"Decrease means below −S\\$1,000. Probabilities use {next_forecast.calibration_observations} earlier out-of-sample residuals under "
+            f"{DIRECTION_PROBABILITY_VERSION}. Supply assumption: {next_forecast.quota_assumption.lower()}. "
+            "The most likely outcome can differ from the point forecast because the historical residual distribution may be asymmetric."
         )
         if not direction_backtest.empty:
             brier = float(direction_backtest["brier_score"].mean())
