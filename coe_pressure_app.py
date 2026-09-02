@@ -25,9 +25,43 @@ from economic_features import (
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.8 twenty-brand-group + exact-cutoff economy refresh • "
+    f"v0.8.1 indicator tooltips • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
+
+METRIC_HELP = {
+    "latest_coe": "The winning COE premium in the latest completed tender. The change shown below it is versus the previous tender.",
+    "bid_quota": "Bids received divided by the available quota in the completed tender. Above 1.00 means demand exceeded supply.",
+    "bids_received": "The total number of bids received in the latest completed tender.",
+    "quota": "The number of COEs available for this category in the latest completed tender.",
+    "direction_accuracy": "The percentage of one-tender-ahead forecasts that correctly predicted whether the COE premium would rise or fall.",
+    "mae": "Mean Absolute Error: the average size of the forecast miss, ignoring whether it was too high or too low. Lower is better.",
+    "rmse": "Root Mean Squared Error: a forecast-error measure that penalises large misses more heavily than MAE. Lower is better.",
+    "interval_coverage": "The share of actual premiums that fell inside the model's nominal 80% forecast interval. It is historical coverage, not a guarantee.",
+    "best_naive": "The simple baseline with the lowest historical MAE: persistence, historical mean drift, or the premium from two tenders earlier.",
+    "mae_improvement_naive": "Percentage reduction in MAE versus the best naïve baseline. Positive means the structural model performed better.",
+    "rmse_improvement_naive": "Percentage reduction in RMSE versus the best naïve baseline. Positive means the structural model performed better.",
+    "source_pdfs": "Dated SGCarMart price-list PDFs retained in the auditable source corpus.",
+    "requested_groups": "The number of user-requested brand groups included in the dealer-data coverage audit.",
+    "source_marques": "Distinct SGCarMart marques represented in the source PDFs. Grouped brands retain their original marque identity for audit.",
+    "eligible_groups": "Brand groups with at least one observation meeting the strict model rules: explicit Cat A/B label and an extracted advertised price.",
+    "category_rows": "Dealer observations that passed validation and are eligible for this COE category's experiment.",
+    "forecast_count": "Paired one-tender-ahead out-of-sample forecasts used to compare models at identical historical cutoffs.",
+    "combined_mae": "MAE for the structural model after adding eligible dealer signals. Lower is better.",
+    "mae_vs_structural": "Percentage reduction in MAE versus the structural-only model. Positive means improvement; negative means deterioration.",
+    "sgd_usd": "Singapore dollars required to buy one US dollar. A higher value means a weaker Singapore dollar.",
+    "vix": "The CBOE Volatility Index, a market measure of expected US equity volatility. Higher values indicate greater market uncertainty.",
+    "us_10y": "Yield on the 10-year US Treasury bond, used as a global long-term interest-rate indicator.",
+    "brent": "Brent crude-oil price per barrel in US dollars, used as an energy-cost and inflation indicator.",
+    "nasdaq_1m": "Percentage change in the Nasdaq Composite over approximately 21 trading days. Positive values indicate a rise.",
+    "gdp_yoy": "Year-on-year percentage change in Singapore's inflation-adjusted economic output.",
+    "cpi_yoy": "Year-on-year percentage change in Singapore's Consumer Price Index, a broad measure of consumer inflation.",
+    "unemployment": "Singapore's seasonally adjusted unemployment rate.",
+    "vehicle_hp": "MAS average interest rate for a three-year hire-purchase loan on a new motor vehicle. It is a market-wide proxy, not category-specific.",
+    "vehicle_rate_age": "Days between the forecast cutoff and the latest available MAS vehicle-loan-rate observation. Larger values mean the rate is staler.",
+    "financing_mae": "MAE for the structural model augmented with economic, market and vehicle-financing variables. Lower is better.",
+    "mae_vs_economy": "Percentage reduction in MAE versus the economy model without financing variables. Positive means improvement.",
+}
 
 REQUESTED_BRAND_GROUPS = {
     "BYD": ("BYD",),
@@ -95,10 +129,10 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         previous = category_data.iloc[-2]
         pressure = latest["bids_received"] / latest["quota"]
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Latest COE", f"S${latest['premium']:,.0f}", f"{latest['premium'] - previous['premium']:+,.0f}")
-        c2.metric("Completed-tender bid / quota", f"{pressure:.2f}×")
-        c3.metric("Bids received", f"{latest['bids_received']:,.0f}")
-        c4.metric("Quota", f"{latest['quota']:,.0f}")
+        c1.metric("Latest COE", f"S${latest['premium']:,.0f}", f"{latest['premium'] - previous['premium']:+,.0f}", help=METRIC_HELP["latest_coe"])
+        c2.metric("Completed-tender bid / quota", f"{pressure:.2f}×", help=METRIC_HELP["bid_quota"])
+        c3.metric("Bids received", f"{latest['bids_received']:,.0f}", help=METRIC_HELP["bids_received"])
+        c4.metric("Quota", f"{latest['quota']:,.0f}", help=METRIC_HELP["quota"])
 
         history = (
             category_data[["display_date", "premium"]]
@@ -119,14 +153,14 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         best_naive = summary.metrics.loc[summary.best_naive]
         st.subheader("Expanding-window out-of-sample results")
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Direction accuracy", f"{structural['direction_accuracy']:.1%}")
-        m2.metric("MAE", f"S${structural['MAE']:,.0f}")
-        m3.metric("RMSE", f"S${structural['RMSE']:,.0f}")
-        m4.metric("80% interval coverage", f"{summary.interval_coverage:.1%}")
+        m1.metric("Direction accuracy", f"{structural['direction_accuracy']:.1%}", help=METRIC_HELP["direction_accuracy"])
+        m2.metric("MAE", f"S${structural['MAE']:,.0f}", help=METRIC_HELP["mae"])
+        m3.metric("RMSE", f"S${structural['RMSE']:,.0f}", help=METRIC_HELP["rmse"])
+        m4.metric("80% interval coverage", f"{summary.interval_coverage:.1%}", help=METRIC_HELP["interval_coverage"])
         n1, n2, n3 = st.columns(3)
-        n1.metric("Best naïve benchmark", summary.best_naive.replace("_", " ").title())
-        n2.metric("MAE improvement vs best naïve", f"{summary.mae_improvement_vs_best_naive:+.1%}")
-        n3.metric("RMSE improvement vs best naïve", f"{summary.rmse_improvement_vs_best_naive:+.1%}")
+        n1.metric("Best naïve benchmark", summary.best_naive.replace("_", " ").title(), help=METRIC_HELP["best_naive"])
+        n2.metric("MAE improvement vs best naïve", f"{summary.mae_improvement_vs_best_naive:+.1%}", help=METRIC_HELP["mae_improvement_naive"])
+        n3.metric("RMSE improvement vs best naïve", f"{summary.rmse_improvement_vs_best_naive:+.1%}", help=METRIC_HELP["rmse_improvement_naive"])
         if summary.mae_improvement_vs_best_naive <= 0:
             st.warning("The structural model does not beat the best naïve MAE in this historical test. It is a research benchmark, not a calibrated forecasting edge.")
 
@@ -175,12 +209,12 @@ with tabs[3]:
             source_pdf_count = len(dealer_manifest) if not dealer_manifest.empty else 0
             source_brand_count = dealer_manifest["brand"].nunique() if not dealer_manifest.empty else 0
             a1, a2, a3, a4, a5, a6 = st.columns(6)
-            a1.metric("Source PDFs", f"{source_pdf_count:,}")
-            a2.metric("Requested groups", f"{len(REQUESTED_BRAND_GROUPS):,}")
-            a3.metric("Source marques", f"{source_brand_count:,}")
-            a4.metric("Eligible groups", f"{validated_archive['brand'].nunique():,}")
-            a5.metric("Cat A rows", f"{(validated_archive['category'] == 'Category A').sum():,}")
-            a6.metric("Cat B rows", f"{(validated_archive['category'] == 'Category B').sum():,}")
+            a1.metric("Source PDFs", f"{source_pdf_count:,}", help=METRIC_HELP["source_pdfs"])
+            a2.metric("Requested groups", f"{len(REQUESTED_BRAND_GROUPS):,}", help=METRIC_HELP["requested_groups"])
+            a3.metric("Source marques", f"{source_brand_count:,}", help=METRIC_HELP["source_marques"])
+            a4.metric("Eligible groups", f"{validated_archive['brand'].nunique():,}", help=METRIC_HELP["eligible_groups"])
+            a5.metric("Cat A rows", f"{(validated_archive['category'] == 'Category A').sum():,}", help=METRIC_HELP["category_rows"])
+            a6.metric("Cat B rows", f"{(validated_archive['category'] == 'Category B').sum():,}", help=METRIC_HELP["category_rows"])
             st.download_button(
                 "Download validated SGCarMart dealer observations",
                 archive.to_csv(index=False).encode(),
@@ -226,10 +260,10 @@ with tabs[3]:
             st.subheader("Incremental out-of-sample test")
             for row in combined.itertuples(index=False):
                 c1, c2, c3, c4 = st.columns(4)
-                c1.metric(f"{row.category} forecasts", f"{int(row.observations):,}")
-                c2.metric("Combined MAE", f"S${row.MAE:,.0f}")
-                c3.metric("MAE vs structural", f"{row.MAE_improvement_vs_structural:+.1%}")
-                c4.metric("Direction accuracy", f"{row.direction_accuracy:.1%}")
+                c1.metric(f"{row.category} forecasts", f"{int(row.observations):,}", help=METRIC_HELP["forecast_count"])
+                c2.metric("Combined MAE", f"S${row.MAE:,.0f}", help=METRIC_HELP["combined_mae"])
+                c3.metric("MAE vs structural", f"{row.MAE_improvement_vs_structural:+.1%}", help=METRIC_HELP["mae_vs_structural"])
+                c4.metric("Direction accuracy", f"{row.direction_accuracy:.1%}", help=METRIC_HELP["direction_accuracy"])
                 if row.MAE_improvement_vs_structural <= 0:
                     st.warning(f"For {row.category}, the dealer-augmented model did not improve MAE in this test. No forecasting edge is claimed.")
                 else:
@@ -286,17 +320,17 @@ with tabs[4]:
         else:
             latest_economic = economic.iloc[-1]
             e1, e2, e3, e4, e5 = st.columns(5)
-            e1.metric("SGD per US dollar", f"{latest_economic.sgd_per_usd:.4f}")
-            e2.metric("VIX", f"{latest_economic.vix:.1f}")
-            e3.metric("US 10-year yield", f"{latest_economic.us_10y_yield:.2f}%")
-            e4.metric("Brent crude", f"US${latest_economic.brent_usd:.2f}")
-            e5.metric("Nasdaq 1-month", f"{latest_economic.nasdaq_return_21d:+.1%}")
+            e1.metric("SGD per US dollar", f"{latest_economic.sgd_per_usd:.4f}", help=METRIC_HELP["sgd_usd"])
+            e2.metric("VIX", f"{latest_economic.vix:.1f}", help=METRIC_HELP["vix"])
+            e3.metric("US 10-year yield", f"{latest_economic.us_10y_yield:.2f}%", help=METRIC_HELP["us_10y"])
+            e4.metric("Brent crude", f"US${latest_economic.brent_usd:.2f}", help=METRIC_HELP["brent"])
+            e5.metric("Nasdaq 1-month", f"{latest_economic.nasdaq_return_21d:+.1%}", help=METRIC_HELP["nasdaq_1m"])
             e6, e7, e8, e9, e10 = st.columns(5)
-            e6.metric("Singapore real GDP YoY", f"{latest_economic.sg_real_gdp_yoy:.1f}%")
-            e7.metric("Singapore CPI YoY", f"{latest_economic.sg_cpi_yoy:.1f}%")
-            e8.metric("Singapore unemployment", f"{latest_economic.sg_unemployment_rate:.1f}%")
-            e9.metric("Vehicle HP rate", f"{latest_economic.vehicle_hire_purchase_3y_rate:.2f}%")
-            e10.metric("Vehicle-rate age", f"{latest_economic.vehicle_hire_purchase_rate_staleness_days:,.0f} days")
+            e6.metric("Singapore real GDP YoY", f"{latest_economic.sg_real_gdp_yoy:.1f}%", help=METRIC_HELP["gdp_yoy"])
+            e7.metric("Singapore CPI YoY", f"{latest_economic.sg_cpi_yoy:.1f}%", help=METRIC_HELP["cpi_yoy"])
+            e8.metric("Singapore unemployment", f"{latest_economic.sg_unemployment_rate:.1f}%", help=METRIC_HELP["unemployment"])
+            e9.metric("Vehicle HP rate", f"{latest_economic.vehicle_hire_purchase_3y_rate:.2f}%", help=METRIC_HELP["vehicle_hp"])
+            e10.metric("Vehicle-rate age", f"{latest_economic.vehicle_hire_purchase_rate_staleness_days:,.0f} days", help=METRIC_HELP["vehicle_rate_age"])
             st.download_button(
                 "Download tender-aligned economic features",
                 economic_raw.to_csv(index=False).encode(),
@@ -316,11 +350,11 @@ with tabs[4]:
             st.subheader("Paired expanding-window financing-rate test")
             for row in financing_model.itertuples(index=False):
                 c1, c2, c3, c4, c5 = st.columns(5)
-                c1.metric(f"{row.category} forecasts", f"{int(row.observations):,}")
-                c2.metric("Financing-model MAE", f"S${row.MAE:,.0f}")
-                c3.metric("MAE vs structural", f"{row.MAE_improvement_vs_structural:+.1%}")
-                c4.metric("MAE vs economy core", f"{row.MAE_improvement_vs_economy_core:+.1%}")
-                c5.metric("Direction accuracy", f"{row.direction_accuracy:.1%}")
+                c1.metric(f"{row.category} forecasts", f"{int(row.observations):,}", help=METRIC_HELP["forecast_count"])
+                c2.metric("Financing-model MAE", f"S${row.MAE:,.0f}", help=METRIC_HELP["financing_mae"])
+                c3.metric("MAE vs structural", f"{row.MAE_improvement_vs_structural:+.1%}", help=METRIC_HELP["mae_vs_structural"])
+                c4.metric("MAE vs economy core", f"{row.MAE_improvement_vs_economy_core:+.1%}", help=METRIC_HELP["mae_vs_economy"])
+                c5.metric("Direction accuracy", f"{row.direction_accuracy:.1%}", help=METRIC_HELP["direction_accuracy"])
                 if row.MAE_improvement_vs_structural <= 0:
                     st.warning(f"For {row.category}, the full financing-rate candidate worsened MAE. No edge is claimed.")
             st.caption(
