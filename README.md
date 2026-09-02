@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.7 vehicle-financing experiment
+# Singapore COE Pressure Indicator — v0.8 twenty-brand-group refresh
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -12,11 +12,13 @@ Every chart, training window, tuning fold, uncertainty interval and benchmark
 now uses a common October 2015 analysis start. Earlier tenders are excluded to
 avoid mixing materially different policy regimes into the reported results.
 
-## v0.7 SGCarMart dealer and advertised car-financing experiment
+## v0.8 SGCarMart dealer refresh
 
-- Reconstructs dated 2024–2026 authorised-dealer price-list signals for BMW,
-  BYD, GAC, Honda, Hyundai, Kia, Mazda, Mercedes-Benz, Nissan, Subaru, Tesla
-  and Toyota from SGCarMart's public archive.
+- Reconstructs dated 2024–2026 authorised-dealer price-list signals for 20
+  requested groups: BYD; Toyota/Lexus; Tesla; Mercedes-Benz; BMW;
+  Chery/Omoda/Jaecoo; GAC/Aion; MG; Honda; Nissan; Kia; Zeekr; Xpeng; Hyundai;
+  Audi; Suzuki; Dongfeng; Porsche; Volvo; and Mazda. These correspond to 23
+  distinct SGCarMart source marques.
 - Stores each source URL, PDF date, later research retrieval timestamp and
   SHA-256 checksum. `available_at` is separate from `retrieved_at` so the
   retrospective as-of assumption is explicit and auditable.
@@ -36,15 +38,16 @@ avoid mixing materially different policy regimes into the reported results.
 - Excludes Category D because SGCarMart's car price-list archive is not a
   motorcycle dealer archive.
 
-The archive contains 863 source PDFs, 2,629 auditable page rows and 997
-model-eligible observations from nine brands. It contains 135 explicit
+The refreshed archive contains 1,487 source PDFs, 3,774 auditable page rows and
+1,124 model-eligible observations from 11 grouped brands. It contains 135 explicit
 advertised car-finance rates, all from Honda documents and ranging from 2.58%
-to 2.78%; this narrow coverage is disclosed. Over 51 paired forecasts per
-category, the v0.7 dealer variant worsened Cat A MAE by 4.62% and Cat B MAE by
-10.73%. The app publishes this negative result and does not claim a calibrated
-dealer forecasting edge.
+to 2.78%; this narrow coverage is disclosed. The latest SGCarMart document is
+dated 1 September 2026. Over 51 paired forecasts per category, the v0.8 dealer
+variant improved Cat A MAE by 1.27% but worsened Cat B MAE by 10.71%. The small
+retrospective Cat A result is not treated as a validated edge, and no calibrated
+Dealer Pressure Index or probabilities are published.
 
-## v0.7 economy, markets and vehicle-financing experiment
+## v0.8 economy, markets and vehicle-financing refresh
 
 - Retains 13 tender-aligned variables: SGD/USD level and 21-day change, VIX level
   and change, US 10-year Treasury yield and change, Brent price and return,
@@ -57,12 +60,15 @@ dealer forecasting edge.
 - Treats daily market observations as available in Singapore only on the next
   calendar day. Monthly CPI uses a 45-day publication buffer; quarterly GDP
   and unemployment use 75 days.
+- Uses exact official LTA tender-opening cutoffs from 2024 onward. Earlier
+  tenders retain the ordered first/second-exercise date approximation because
+  the results table does not contain historical opening timestamps.
 - Runs a three-way paired expanding-window comparison at the same 193 forecast
   origins: structural, structural plus the 13-variable economy block, and that
   block plus financing. Relative to the economy block, financing worsened MAE
-  by 0.20% for Cat A, 1.43% for Cat B and 1.01% for Cat D. Relative to the
-  structural model, the 15-variable version worsened MAE by 0.12%, 1.07% and
-  6.59%, respectively. It is not promoted over the structural model.
+  by 0.33% for Cat A, 1.21% for Cat B and 1.02% for Cat D. Relative to the
+  structural model, the 15-variable version worsened MAE by 0.70%, 0.78% and
+  5.36%, respectively. It is not promoted over the structural model.
 - The official rate currently ends in April 2023. The explicit staleness
   feature prevents a carried-forward value from being mistaken for a fresh
   observation. No unsupported motorcycle-specific history is imputed.

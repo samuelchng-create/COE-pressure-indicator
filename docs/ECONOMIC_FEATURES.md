@@ -3,6 +3,11 @@
 The materialized dataset starts in October 2015 to match the common COE model
 analysis boundary.
 
+Tender cutoffs use the official LTA opening timestamp from 2024 onward,
+including the three-week gaps in the 2026 schedule. Earlier tenders retain the
+ordered first/second-exercise 1st/15th approximation because the results table
+does not contain historical opening timestamps.
+
 ## Variables
 
 | Feature | Interpretation | Historical availability rule |
@@ -42,9 +47,9 @@ forward only together with an explicit age feature. No motorcycle-specific
 historical rate is fabricated from current dealer quotations.
 
 At the same 193 post-policy forecast origins per category, adding the two
-financing features to the 13-variable economy block worsened MAE by 0.20% for
-Cat A, 1.43% for Cat B and 1.01% for Cat D. Against structural-only, the full
-15-variable model worsened MAE by 0.12%, 1.07% and 6.59%, respectively. This is
+financing features to the 13-variable economy block worsened MAE by 0.33% for
+Cat A, 1.21% for Cat B and 1.02% for Cat D. Against structural-only, the full
+15-variable model worsened MAE by 0.70%, 0.78% and 5.36%, respectively. This is
 a negative experiment, not evidence of a financing-rate forecasting edge.
 
 ## Limits

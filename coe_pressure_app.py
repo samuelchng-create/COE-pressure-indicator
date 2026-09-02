@@ -25,9 +25,37 @@ from economic_features import (
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.7 vehicle-financing experiment + v0.6 dealer archive • "
+    f"v0.8 twenty-brand-group + exact-cutoff economy refresh • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
+
+REQUESTED_BRAND_GROUPS = {
+    "BYD": ("BYD",),
+    "Toyota / Lexus": ("Toyota", "Lexus"),
+    "Tesla": ("Tesla",),
+    "Mercedes-Benz": ("Mercedes-Benz",),
+    "BMW": ("BMW",),
+    "Chery / Omoda / Jaecoo": ("Omoda", "Jaecoo"),
+    "GAC / Aion": ("GAC", "Aion"),
+    "MG": ("MG",),
+    "Honda": ("Honda",),
+    "Nissan": ("Nissan",),
+    "Kia": ("Kia",),
+    "ZEEKR": ("ZEEKR",),
+    "XPENG": ("XPENG",),
+    "Hyundai": ("Hyundai",),
+    "Audi": ("Audi",),
+    "Suzuki": ("Suzuki",),
+    "Dongfeng": ("Dongfeng",),
+    "Porsche": ("Porsche",),
+    "Volvo": ("Volvo",),
+    "Mazda": ("Mazda",),
+}
+SOURCE_TO_BRAND_GROUP = {
+    source: group
+    for group, sources in REQUESTED_BRAND_GROUPS.items()
+    for source in sources
+}
 
 DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
 URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
@@ -146,12 +174,13 @@ with tabs[3]:
             dealer_manifest = pd.read_csv(dealer_manifest_path) if dealer_manifest_path.exists() else pd.DataFrame()
             source_pdf_count = len(dealer_manifest) if not dealer_manifest.empty else 0
             source_brand_count = dealer_manifest["brand"].nunique() if not dealer_manifest.empty else 0
-            a1, a2, a3, a4, a5 = st.columns(5)
+            a1, a2, a3, a4, a5, a6 = st.columns(6)
             a1.metric("Source PDFs", f"{source_pdf_count:,}")
-            a2.metric("Source brands", f"{source_brand_count:,}")
-            a3.metric("Eligible brands", f"{validated_archive['brand'].nunique():,}")
-            a4.metric("Cat A rows", f"{(validated_archive['category'] == 'Category A').sum():,}")
-            a5.metric("Cat B rows", f"{(validated_archive['category'] == 'Category B').sum():,}")
+            a2.metric("Requested groups", f"{len(REQUESTED_BRAND_GROUPS):,}")
+            a3.metric("Source marques", f"{source_brand_count:,}")
+            a4.metric("Eligible groups", f"{validated_archive['brand'].nunique():,}")
+            a5.metric("Cat A rows", f"{(validated_archive['category'] == 'Category A').sum():,}")
+            a6.metric("Cat B rows", f"{(validated_archive['category'] == 'Category B').sum():,}")
             st.download_button(
                 "Download validated SGCarMart dealer observations",
                 archive.to_csv(index=False).encode(),
@@ -160,9 +189,29 @@ with tabs[3]:
             )
             st.caption(
                 f"Dated observations: {validated_archive['observed_at'].min().date()} to {validated_archive['observed_at'].max().date()}. "
-                f"The source corpus covers {source_brand_count} brands; eligible rows from "
+                f"The source corpus covers {source_brand_count} marques in {len(REQUESTED_BRAND_GROUPS)} requested groups; eligible rows from "
                 f"{', '.join(sorted(validated_archive['brand'].unique()))} require an explicit Cat A/B page label and extracted advertised prices."
             )
+            if not dealer_manifest.empty:
+                coverage = dealer_manifest[["brand", "document_date"]].copy()
+                coverage["Brand group"] = coverage["brand"].map(SOURCE_TO_BRAND_GROUP)
+                coverage = (
+                    coverage.groupby("Brand group", sort=False)
+                    .agg(
+                        **{
+                            "Source marques": ("brand", lambda values: ", ".join(sorted(set(values)))),
+                            "Source PDFs": ("brand", "size"),
+                            "Latest document": ("document_date", "max"),
+                        }
+                    )
+                    .reindex(REQUESTED_BRAND_GROUPS)
+                    .reset_index()
+                )
+                eligible_counts = validated_archive["brand"].value_counts()
+                coverage["Model-eligible rows"] = coverage["Brand group"].map(eligible_counts).fillna(0).astype(int)
+                coverage["Model eligible"] = coverage["Model-eligible rows"].gt(0).map({True: "Yes", False: "No"})
+                with st.expander("Coverage by requested brand group", expanded=True):
+                    st.dataframe(coverage, hide_index=True, width="stretch")
             finance_rates = validated_archive["finance_rate_pct"].dropna()
             if not finance_rates.empty:
                 st.caption(
@@ -221,7 +270,7 @@ Dealer features are accepted only when source URL, observation time, evidenced a
 with tabs[4]:
     st.subheader("Economic and financial-market variables")
     st.write(
-        "The candidate v0.7 model adds Singapore growth, inflation and unemployment; "
+        "The candidate v0.8 model adds Singapore growth, inflation and unemployment; "
         "SGD/USD, global equities, volatility, long-term rates and oil; and the MAS three-year "
         "new-vehicle hire-purchase rate with an explicit staleness measure. The existing "
         "structural forecast remains primary unless the augmented model improves frozen out-of-sample results."
@@ -289,7 +338,7 @@ with tabs[4]:
     )
 
 with tabs[5]:
-    st.subheader("v0.7 financing / v0.6 dealer archive audit trail")
+    st.subheader("v0.8 dealer and exact-cutoff economy audit trail")
     st.markdown(
         f"""
 - **Common analysis boundary:** all charts, model fitting, tuning, intervals and benchmark metrics start in October 2015. Pre-October-2015 tenders are excluded for policy-regime reliability and comparability.
@@ -302,7 +351,7 @@ with tabs[5]:
 - **Announced supply assumption:** current-tender category and Cat E quotas are treated as known before bidding. The results dataset lacks publication timestamps, so future frozen forecasts should archive the corresponding LTA announcement.
 - **No calibrated Dealer Pressure Index:** no arbitrary composite weights or probabilities are published.
 - **Dealer archive reconstruction:** date-only historical SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date. If contemporaneous collection proves an earlier public time, that observed time is used; retrieval timestamps and PDF checksums remain recorded for audit.
-- **Expanded dealer coverage:** the v0.6 source corpus covers 12 authorised-dealer brands. A brand contributes model rows only when its page layout passes the same explicit Cat A/B label and advertised-price rules; categories are never inferred from vehicle models.
+- **Expanded dealer coverage:** the v0.8 corpus covers 20 requested brand groups through 23 SGCarMart source marques and 1,487 dated PDFs. Toyota/Lexus, Chery/Omoda/Jaecoo and GAC/Aion preserve their source-marque identity in audit notes while using grouped display labels and the matching consolidated LTA make series.
 - **Dealer-model eligibility:** only explicitly labelled Cat A/B pages with extracted advertised prices enter the incremental test. Unclassified pages remain visible for review; Cat D has no SGCarMart car-price-list dealer signal.
 - **Economy/markets/financing experiment:** the candidate adds 15 as-of variables under `{ECONOMIC_MODEL_VERSION}`, including the MAS new-vehicle hire-purchase rate and its staleness, and is evaluated at the same outer forecast origins as the 13-variable economy core and structural model.
 - **Car versus motorcycle financing:** 135 explicit advertised car-rate observations enter the Cat A/B dealer experiment. For Cat D, the MAS all-new-vehicle rate is only a market-wide proxy; no motorcycle-specific historical rate is imputed.

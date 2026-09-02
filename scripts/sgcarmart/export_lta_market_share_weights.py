@@ -9,7 +9,15 @@ from pathlib import Path
 import pandas as pd
 
 
-ALIASES = {"BMW": "B.M.W.", "MERCEDES-BENZ": "MERCEDES BENZ"}
+ALIASES = {
+    "BMW": "B.M.W.",
+    "MERCEDES-BENZ": "MERCEDES BENZ",
+    "LEXUS": "TOYOTA",
+    "OMODA": "CHERY",
+    "JAECOO": "CHERY",
+    "AION": "GAC",
+    "MG": "M.G.",
+}
 SOURCE_URL = "https://datamall.lta.gov.sg/content/datamall/en/static-data.html"
 
 

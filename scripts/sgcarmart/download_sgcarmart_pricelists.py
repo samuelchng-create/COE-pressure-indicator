@@ -10,14 +10,18 @@ import json
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 
-# Twelve high-registration passenger-car brands. Pages still enter the model
-# only when the deterministic parser finds an explicit Cat A/B page label and
-# advertised prices; mixed-category documents remain auditable context.
-SELECTED_IDS = {4, 13, 14, 18, 24, 25, 29, 42, 44, 81, 86, 123}
+# Twenty requested passenger-car groups represented by 23 SGCarMart source
+# marques: Toyota/Lexus, Chery/Omoda/Jaecoo and GAC/Aion each retain both
+# underlying price-list archives. Pages enter the model only with an explicit
+# Cat A/B label and advertised prices; mixed pages remain auditable context.
+SELECTED_IDS = {
+    3, 4, 13, 14, 18, 21, 24, 25, 29, 35, 43, 44, 46, 81, 82, 86,
+    102, 103, 108, 111, 112, 115, 123,
+}
 
 
 def sha256(path: Path) -> str:
@@ -33,7 +37,7 @@ def main() -> None:
     parser.add_argument("dealers", type=Path)
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--start", default="2024-01-01")
-    parser.add_argument("--end", default="2026-08-24")
+    parser.add_argument("--end", default=date.today().isoformat())
     parser.add_argument("--delay", type=float, default=5.0)
     args = parser.parse_args()
 
@@ -45,7 +49,9 @@ def main() -> None:
     if manifest_path.exists():
         with manifest_path.open(newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
-                existing[(int(row["dealer_id"]), row["document_date"])] = row
+                dealer_id = int(row["dealer_id"])
+                if dealer_id in SELECTED_IDS:
+                    existing[(dealer_id, row["document_date"])] = row
 
     jobs = []
     for dealer in selected:

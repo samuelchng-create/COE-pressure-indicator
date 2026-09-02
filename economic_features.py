@@ -6,8 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-ECONOMIC_MODEL_VERSION = "v0.7-structural-economy-vehicle-financing-post-2015-1"
+ECONOMIC_MODEL_VERSION = "v0.8-structural-economy-financing-exact-cutoffs-post-2015-1"
 ECONOMIC_FEATURE_AVAILABILITY = {
+    "tender cutoff": "Official LTA opening timestamp from 2024; ordered 1st/15th approximation before 2024.",
     "daily FX, volatility, rates and oil": "Observation date plus one calendar day, noon Singapore time.",
     "market changes": "Latest as-of value versus the latest value at least 30 calendar days earlier.",
     "Singapore CPI": "Month-end plus a conservative 45-day publication buffer.",

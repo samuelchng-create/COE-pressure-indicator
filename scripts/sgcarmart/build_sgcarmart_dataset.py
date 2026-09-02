@@ -217,7 +217,15 @@ def market_share_table(path: Path) -> pd.DataFrame:
 
 
 def trailing_share(monthly: pd.DataFrame, brand: str, document_date: str) -> tuple[float | None, float | None, float | None, str]:
-    aliases = {"BMW": "B.M.W.", "MERCEDES-BENZ": "MERCEDES BENZ"}
+    aliases = {
+        "BMW": "B.M.W.",
+        "MERCEDES-BENZ": "MERCEDES BENZ",
+        "LEXUS": "TOYOTA",
+        "OMODA": "CHERY",
+        "JAECOO": "CHERY",
+        "AION": "GAC",
+        "MG": "M.G.",
+    }
     make = aliases.get(brand.upper(), brand.upper())
     cutoff = pd.Period(document_date[:7], freq="M") - 1
     start = cutoff - 11
@@ -250,8 +258,6 @@ def main() -> None:
         for page_number, lines in enumerate(parse_ocr(ocr_path), start=1):
             category, category_method = category_for_page(lines)
             features = page_features(lines)
-            if not any((features["advertised_price_count"], features["coe_rebate_level"], features["promotion_name"], features["finance_incentive_text"], features["trade_in_incentive_text"])):
-                continue
             share, numerator, denominator, window = trailing_share(monthly, source["brand"], document_date)
             rows.append({
                 "observed_at": f"{document_date}T00:00:00+08:00",

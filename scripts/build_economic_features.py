@@ -208,18 +208,30 @@ def market_snapshot(frame: pd.DataFrame, cutoff: pd.Timestamp) -> tuple[float, f
 
 
 def tender_cutoffs() -> pd.DataFrame:
-    end = pd.Timestamp.now(tz="Asia/Singapore").normalize() + pd.offsets.MonthBegin(1)
+    now = pd.Timestamp.now(tz="Asia/Singapore")
+    # Before the versioned schedule begins, retain the source table's ordered
+    # first/second-exercise approximation. From 2024 onward, use the exact LTA
+    # opening timestamp shared with the dealer experiment.
+    end = pd.Timestamp("2024-01-01", tz="Asia/Singapore")
     rows = []
     for month in pd.date_range(START, end, freq="MS"):
+        if month >= end:
+            continue
         for bidding_no, day in ((1, 1), (2, 15)):
             cutoff = month + pd.Timedelta(days=day - 1)
-            if cutoff > pd.Timestamp.now(tz="Asia/Singapore"):
-                continue
             rows.append({
                 "tender_id": f"{month:%Y-%m}-{bidding_no}",
                 "forecast_cutoff_at": cutoff,
             })
-    return pd.DataFrame(rows)
+    schedule = pd.read_csv(ROOT / "data" / "tender_schedule_2024_2026.csv")
+    schedule = schedule[schedule["category"].eq("Category A")][
+        ["tender_id", "forecast_cutoff_at"]
+    ].drop_duplicates("tender_id")
+    schedule["forecast_cutoff_at"] = pd.to_datetime(schedule["forecast_cutoff_at"], utc=True).dt.tz_convert(
+        "Asia/Singapore"
+    )
+    schedule = schedule[schedule["forecast_cutoff_at"] <= now]
+    return pd.concat([pd.DataFrame(rows), schedule], ignore_index=True).sort_values("forecast_cutoff_at")
 
 
 def main() -> None:

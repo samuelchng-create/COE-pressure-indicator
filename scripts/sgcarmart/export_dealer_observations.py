@@ -9,6 +9,16 @@ from pathlib import Path
 import pandas as pd
 
 
+BRAND_GROUPS = {
+    "Toyota": "Toyota / Lexus",
+    "Lexus": "Toyota / Lexus",
+    "Omoda": "Chery / Omoda / Jaecoo",
+    "Jaecoo": "Chery / Omoda / Jaecoo",
+    "GAC": "GAC / Aion",
+    "Aion": "GAC / Aion",
+}
+
+
 def evidenced_available_at(row: pd.Series) -> str:
     """Use conservative end-of-day unless collection proves earlier availability."""
     end_of_day = pd.Timestamp(f"{row.source_document_date}T23:59:59", tz="Asia/Singapore")
@@ -40,7 +50,7 @@ def main() -> None:
     output["source_url"] = raw["source_url"]
     output["source_type"] = "SGCarMart archived authorised-dealer price list"
     output["category"] = raw["category"].map(category_map)
-    output["brand"] = raw["brand"]
+    output["brand"] = raw["brand"].map(BRAND_GROUPS).fillna(raw["brand"])
     output["model"] = "Price-list page summary"
     output["variant"] = raw["source_page"].map(lambda value: f"PDF page {int(value)}")
     output["advertised_price"] = raw["advertised_price_median"]
@@ -69,7 +79,8 @@ def main() -> None:
     output["currency"] = "SGD"
     output["notes"] = raw.apply(
         lambda row: (
-            f"{row.observation_level}; {row.category_method}; price_count={int(row.advertised_price_count)}; "
+            f"source_marque={row.brand}; {row.observation_level}; {row.category_method}; "
+            f"price_count={int(row.advertised_price_count)}; "
             f"price_range={row.advertised_price_min}-{row.advertised_price_max}; "
             f"finance_rate_pct={row.finance_rate_pct}; finance={row.finance_incentive_text}; "
             f"trade_in={row.trade_in_incentive_text}; sha256={row.source_sha256}; "

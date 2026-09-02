@@ -29,7 +29,12 @@ def main() -> None:
         for pdf in sorted(args.corpus.glob("*/*.pdf")):
             relative = pdf.relative_to(args.corpus).with_suffix(".tsv")
             target = args.output / relative
-            if not target.exists():
+            reusable = (
+                target.exists()
+                and target.stat().st_size > 0
+                and not target.read_text(encoding="utf-8", errors="ignore").startswith("###ERROR")
+            )
+            if not reusable:
                 pending.append((pdf, target))
         if not pending:
             if not args.follow or idle >= args.idle_rounds:
@@ -59,7 +64,7 @@ def main() -> None:
                     text=True,
                     check=False,
                 )
-                if result.returncode != 0 and not result.stdout:
+                if "###PAGE" not in result.stdout:
                     target.write_text(f"###ERROR ocr_failed {result.stderr}\n", encoding="utf-8")
                     return pdf, False
                 target.write_text(result.stdout, encoding="utf-8")
