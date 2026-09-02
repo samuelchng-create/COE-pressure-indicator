@@ -4,11 +4,13 @@ import pytest
 
 from coe_model import (
     build_feature_frame,
+    prepare_coe_data,
+    walk_forward_backtest,
+)
+from direction_probabilities import (
     direction_label,
     forecast_next_tender,
     prequential_direction_probabilities,
-    prepare_coe_data,
-    walk_forward_backtest,
 )
 
 

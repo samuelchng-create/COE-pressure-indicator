@@ -7,14 +7,16 @@ import streamlit as st
 from coe_model import (
     ANALYSIS_START,
     CATEGORIES,
-    DIRECTION_PROBABILITY_VERSION,
     FEATURE_AVAILABILITY,
     MODEL_VERSION,
-    forecast_next_tender,
-    prequential_direction_probabilities,
     prepare_coe_data,
     summarize_backtest,
     walk_forward_backtest,
+)
+from direction_probabilities import (
+    DIRECTION_PROBABILITY_VERSION,
+    forecast_next_tender,
+    prequential_direction_probabilities,
 )
 from dealer_signals import empty_dealer_template, validate_dealer_observations
 from economic_features import (
