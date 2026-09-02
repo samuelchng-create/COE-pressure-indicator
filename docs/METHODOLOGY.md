@@ -1,4 +1,4 @@
-# v0.8 dealer and exact-cutoff economy refresh methodology
+# v0.9 three-way probability, dealer and economy methodology
 
 ## Common analysis window
 
@@ -59,8 +59,33 @@ interval at a tender uses only absolute errors from earlier outer predictions.
 ## Interpretation
 
 Back-test improvement is descriptive, not a guarantee. Where structural MAE
-does not beat the best naïve benchmark, the app says so. v0.2 publishes neither
-an upcoming-tender probability nor a composite Dealer Pressure Index.
+does not beat the best naïve benchmark, the app says so. No composite Dealer
+Pressure Index is published.
+
+## v0.9 three-way probability contract
+
+The next-exercise display classifies the premium change as Increase when it is
+above S$1,000, Stay when it is between −S$1,000 and +S$1,000 inclusive, and
+Decrease when it is below −S$1,000. The structural Ridge point forecast is not
+converted to a probability with an assumed normal distribution. Instead, it is
+shifted by the empirical distribution of earlier expanding-window
+out-of-sample residuals. The shares falling in the three outcome regions become
+probabilities after one-count Laplace smoothing.
+
+Probability evaluation is itself prequential. At every historical origin, the
+residual distribution and historical-frequency baseline contain only earlier
+outcomes. Evaluation begins after 20 earlier out-of-sample residuals and reports
+multiclass Brier score, log loss, highest-probability three-way accuracy and
+Brier improvement versus the historical-frequency probability baseline. A
+future outcome cannot revise any earlier probability.
+
+The official results feed contains completed tenders rather than a timestamped
+upcoming quota announcement. For the live next-exercise row, the last completed
+category and Cat E quotas are therefore carried forward as an explicit neutral
+supply assumption. This must be replaced by an archived announced quota before
+the probability can be described as a fully specified real-time forecast. The
+probabilities remain experimental and are not called calibrated until future
+frozen forecasts validate them.
 
 ## v0.8 dealer experiment contract
 

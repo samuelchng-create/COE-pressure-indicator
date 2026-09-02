@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.8 twenty-brand-group refresh
+# Singapore COE Pressure Indicator — v0.9 three-way outlook
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -6,11 +6,32 @@ back-tests, compares the structural forecast with three naïve benchmarks, and
 reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
-forecast edge is calibrated. Negative benchmark results remain visible.
+forecast edge is prospectively calibrated. Negative benchmark results remain visible.
 
 Every chart, training window, tuning fold, uncertainty interval and benchmark
 now uses a common October 2015 analysis start. Earlier tenders are excluded to
 avoid mixing materially different policy regimes into the reported results.
+
+## v0.9 next-exercise probability outlook
+
+- Reports an experimental three-way forecast for each category: **Increase**
+  above S$1,000, **Stay** within ±S$1,000 inclusive, or **Decrease** below
+  −S$1,000.
+- Forms probabilities from the current structural point forecast plus the
+  empirical distribution of earlier out-of-sample structural errors. Laplace
+  smoothing prevents unsupported zero probabilities.
+- Back-tests every historical probability prequentially: a tender can use only
+  errors observed before that tender. Multiclass Brier score, three-way
+  accuracy and improvement over an earlier-outcome-frequency probability
+  baseline are displayed beside the forecast.
+- Treats the probabilities as experimental even when the retrospective Brier
+  score improves. Prospective frozen forecasts are still required before any
+  calibration claim.
+- Carries the last completed category and Cat E quotas into the upcoming row as
+  a disclosed neutral supply assumption until a timestamped upcoming quota
+  announcement is added. The structural point forecast and the most probable
+  outcome can differ when the historical residual distribution is asymmetric.
+- Adds plain-language hover help to every headline dashboard indicator.
 
 ## v0.8 SGCarMart dealer refresh
 

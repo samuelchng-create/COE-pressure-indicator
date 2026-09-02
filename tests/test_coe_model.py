@@ -1,7 +1,15 @@
 import numpy as np
 import pandas as pd
+import pytest
 
-from coe_model import build_feature_frame, prepare_coe_data, walk_forward_backtest
+from coe_model import (
+    build_feature_frame,
+    direction_label,
+    forecast_next_tender,
+    prequential_direction_probabilities,
+    prepare_coe_data,
+    walk_forward_backtest,
+)
 
 
 def synthetic_records(tenders: int = 90) -> list[dict]:
@@ -82,3 +90,34 @@ def test_future_mutation_cannot_change_earlier_predictions():
     right = revised[revised["tender_id"] <= cutoff].reset_index(drop=True)
     np.testing.assert_allclose(left["structural"], right["structural"])
     assert (left["train_end_tender"] < left["tender_id"]).all()
+
+
+def test_three_way_direction_uses_inclusive_thousand_dollar_stay_band():
+    assert direction_label(-1_001) == "Decrease"
+    assert direction_label(-1_000) == "Stay"
+    assert direction_label(0) == "Stay"
+    assert direction_label(1_000) == "Stay"
+    assert direction_label(1_001) == "Increase"
+
+
+def test_prequential_probabilities_sum_to_one_and_do_not_use_future_outcomes():
+    data = prepare_coe_data(synthetic_records())
+    backtest = walk_forward_backtest(data, "Category A", min_train=30, min_calibration=5)
+    original = prequential_direction_probabilities(backtest, min_calibration=10)
+    probability_columns = ["probability_decrease", "probability_stay", "probability_increase"]
+    np.testing.assert_allclose(original[probability_columns].sum(axis=1), 1.0)
+
+    changed = backtest.copy()
+    changed.loc[changed.index[-1], "actual"] *= 10
+    revised = prequential_direction_probabilities(changed, min_calibration=10)
+    pd.testing.assert_frame_equal(original.iloc[:-1], revised.iloc[:-1])
+
+
+def test_next_tender_forecast_has_three_probabilities_and_future_tender_id():
+    data = prepare_coe_data(synthetic_records())
+    backtest = walk_forward_backtest(data, "Category A", min_train=30, min_calibration=5)
+    forecast = forecast_next_tender(data, "Category A", backtest)
+    assert forecast.tender_id == "2023-10-1"
+    assert forecast.predicted_direction in {"Decrease", "Stay", "Increase"}
+    assert set(forecast.probabilities) == {"Decrease", "Stay", "Increase"}
+    assert sum(forecast.probabilities.values()) == pytest.approx(1.0)

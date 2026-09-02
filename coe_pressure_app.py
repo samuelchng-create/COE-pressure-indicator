@@ -7,8 +7,11 @@ import streamlit as st
 from coe_model import (
     ANALYSIS_START,
     CATEGORIES,
+    DIRECTION_PROBABILITY_VERSION,
     FEATURE_AVAILABILITY,
     MODEL_VERSION,
+    forecast_next_tender,
+    prequential_direction_probabilities,
     prepare_coe_data,
     summarize_backtest,
     walk_forward_backtest,
@@ -25,7 +28,7 @@ from economic_features import (
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.8.1 indicator tooltips • "
+    f"v0.9 three-way next-exercise outlook + indicator tooltips • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -61,6 +64,13 @@ METRIC_HELP = {
     "vehicle_rate_age": "Days between the forecast cutoff and the latest available MAS vehicle-loan-rate observation. Larger values mean the rate is staler.",
     "financing_mae": "MAE for the structural model augmented with economic, market and vehicle-financing variables. Lower is better.",
     "mae_vs_economy": "Percentage reduction in MAE versus the economy model without financing variables. Positive means improvement.",
+    "predicted_outcome": "The outcome with the highest estimated probability: Increase above S$1,000, Stay within ±S$1,000, or Decrease below −S$1,000.",
+    "outcome_probability": "Estimated chance of this outcome, based on the structural point forecast plus only earlier out-of-sample forecast errors. Experimental, not prospectively calibrated.",
+    "predicted_change": "The structural model's point estimate for the change from the latest completed COE premium to the next exercise.",
+    "probability_backtests": "Historical one-step probability forecasts made after at least 20 earlier out-of-sample errors were available.",
+    "brier_score": "Multiclass Brier score: the average squared difference between predicted probabilities and actual outcomes. Lower is better; zero is perfect.",
+    "brier_improvement": "Percentage reduction in Brier score versus probabilities based only on earlier outcome frequencies. Positive means better probability accuracy.",
+    "three_way_accuracy": "Percentage of back-tested tenders where the highest-probability outcome matched Increase, Stay or Decrease under the ±S$1,000 rule.",
 }
 
 REQUESTED_BRAND_GROUPS = {
@@ -151,6 +161,44 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         summary = summarize_backtest(backtest)
         structural = summary.metrics.loc["structural"]
         best_naive = summary.metrics.loc[summary.best_naive]
+
+        direction_backtest = prequential_direction_probabilities(backtest)
+        next_forecast = forecast_next_tender(df, category, backtest)
+        st.subheader("Next bidding exercise: experimental three-way outlook")
+        p1, p2, p3, p4, p5 = st.columns(5)
+        p1.metric("Most likely outcome", next_forecast.predicted_direction, help=METRIC_HELP["predicted_outcome"])
+        p2.metric("Increase probability", f"{next_forecast.probabilities['Increase']:.1%}", help=METRIC_HELP["outcome_probability"])
+        p3.metric("Stay probability", f"{next_forecast.probabilities['Stay']:.1%}", help=METRIC_HELP["outcome_probability"])
+        p4.metric("Decrease probability", f"{next_forecast.probabilities['Decrease']:.1%}", help=METRIC_HELP["outcome_probability"])
+        p5.metric("Predicted change", f"S${next_forecast.predicted_change:+,.0f}", help=METRIC_HELP["predicted_change"])
+        st.caption(
+            f"Target exercise: {next_forecast.tender_id}. Increase means above +S$1,000; Stay means within ±S$1,000 inclusive; "
+            f"Decrease means below −S$1,000. Probabilities use {next_forecast.calibration_observations} earlier out-of-sample residuals under "
+            f"{DIRECTION_PROBABILITY_VERSION}. Supply assumption: {next_forecast.quota_assumption.lower()}."
+        )
+        if not direction_backtest.empty:
+            brier = float(direction_backtest["brier_score"].mean())
+            baseline_brier = float(direction_backtest["frequency_baseline_brier"].mean())
+            brier_improvement = (baseline_brier - brier) / baseline_brier
+            three_way_accuracy = float(
+                direction_backtest["predicted_direction"].eq(direction_backtest["actual_direction"]).mean()
+            )
+            q1, q2, q3, q4 = st.columns(4)
+            q1.metric("Probability back-tests", f"{len(direction_backtest):,}", help=METRIC_HELP["probability_backtests"])
+            q2.metric("Three-way Brier score", f"{brier:.3f}", help=METRIC_HELP["brier_score"])
+            q3.metric("Brier vs frequency baseline", f"{brier_improvement:+.1%}", help=METRIC_HELP["brier_improvement"])
+            q4.metric("Three-way accuracy", f"{three_way_accuracy:.1%}", help=METRIC_HELP["three_way_accuracy"])
+            if brier_improvement <= 0:
+                st.warning(
+                    "These probabilities did not beat the historical-frequency probability baseline on Brier score. "
+                    "They are displayed as an experimental scenario, not a calibrated forecasting edge."
+                )
+            else:
+                st.info(
+                    "The probability layer beat the historical-frequency baseline retrospectively, but remains experimental "
+                    "until performance is confirmed on future frozen forecasts."
+                )
+
         st.subheader("Expanding-window out-of-sample results")
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Direction accuracy", f"{structural['direction_accuracy']:.1%}", help=METRIC_HELP["direction_accuracy"])
@@ -383,7 +431,8 @@ with tabs[5]:
 - **Uncertainty:** an 80% prequential conformal interval based only on absolute errors from earlier out-of-sample forecasts. Coverage is empirical, not guaranteed prospectively.
 - **No current-tender outcome leakage:** premiums, bids, bid-to-quota ratios, excess demand, momentum and Cat E outcome signals are lagged by at least one completed tender.
 - **Announced supply assumption:** current-tender category and Cat E quotas are treated as known before bidding. The results dataset lacks publication timestamps, so future frozen forecasts should archive the corresponding LTA announcement.
-- **No calibrated Dealer Pressure Index:** no arbitrary composite weights or probabilities are published.
+- **Probability forecast:** the three-way Increase/Stay/Decrease probabilities use only earlier out-of-sample structural residuals with Laplace smoothing. Stay is defined as an inclusive ±S$1,000 change. Brier score is compared with an earlier-outcome-frequency baseline; probabilities remain experimental until future frozen validation.
+- **No calibrated Dealer Pressure Index:** no arbitrary composite dealer weights or probabilities are published.
 - **Dealer archive reconstruction:** date-only historical SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date. If contemporaneous collection proves an earlier public time, that observed time is used; retrieval timestamps and PDF checksums remain recorded for audit.
 - **Expanded dealer coverage:** the v0.8 corpus covers 20 requested brand groups through 23 SGCarMart source marques and 1,487 dated PDFs. Toyota/Lexus, Chery/Omoda/Jaecoo and GAC/Aion preserve their source-marque identity in audit notes while using grouped display labels and the matching consolidated LTA make series.
 - **Dealer-model eligibility:** only explicitly labelled Cat A/B pages with extracted advertised prices enter the incremental test. Unclassified pages remain visible for review; Cat D has no SGCarMart car-price-list dealer signal.
