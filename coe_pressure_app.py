@@ -428,41 +428,184 @@ with tabs[4]:
     )
 
 with tabs[5]:
-    st.subheader("v0.8 dealer and exact-cutoff economy audit trail")
-    st.markdown(
-        f"""
-- **Common analysis boundary:** all charts, model fitting, tuning, intervals and benchmark metrics start in October 2015. Pre-October-2015 tenders are excluded for policy-regime reliability and comparability.
-- **Fixed parsing defect:** official values containing commas were previously coerced to missing values, causing recent charts and results to be unreliable.
-- **Target:** one-tender-ahead change in COE premium, modelled separately for Categories A, B and D.
-- **Validation:** expanding walk-forward evaluation with a minimum 60-tender training window. Ridge regularization is selected inside each training window using time-ordered inner folds.
-- **Benchmarks:** persistence, historical mean drift and the premium from two tenders earlier.
-- **Uncertainty:** an 80% prequential conformal interval based only on absolute errors from earlier out-of-sample forecasts. Coverage is empirical, not guaranteed prospectively.
-- **No current-tender outcome leakage:** premiums, bids, bid-to-quota ratios, excess demand, momentum and Cat E outcome signals are lagged by at least one completed tender.
-- **Announced supply assumption:** current-tender category and Cat E quotas are treated as known before bidding. The results dataset lacks publication timestamps, so future frozen forecasts should archive the corresponding LTA announcement.
-- **Probability forecast:** the three-way Increase/Stay/Decrease probabilities use only earlier out-of-sample structural residuals with Laplace smoothing. Stay is defined as an inclusive ±S$1,000 change. Brier score is compared with an earlier-outcome-frequency baseline; probabilities remain experimental until future frozen validation.
-- **No calibrated Dealer Pressure Index:** no arbitrary composite dealer weights or probabilities are published.
-- **Dealer archive reconstruction:** date-only historical SGCarMart price lists are treated as available at 23:59:59 Singapore time on their stated date. If contemporaneous collection proves an earlier public time, that observed time is used; retrieval timestamps and PDF checksums remain recorded for audit.
-- **Expanded dealer coverage:** the v0.8 corpus covers 20 requested brand groups through 23 SGCarMart source marques and 1,487 dated PDFs. Toyota/Lexus, Chery/Omoda/Jaecoo and GAC/Aion preserve their source-marque identity in audit notes while using grouped display labels and the matching consolidated LTA make series.
-- **Dealer-model eligibility:** only explicitly labelled Cat A/B pages with extracted advertised prices enter the incremental test. Unclassified pages remain visible for review; Cat D has no SGCarMart car-price-list dealer signal.
-- **Economy/markets/financing experiment:** the candidate adds 15 as-of variables under `{ECONOMIC_MODEL_VERSION}`, including the MAS new-vehicle hire-purchase rate and its staleness, and is evaluated at the same outer forecast origins as the 13-variable economy core and structural model.
-- **Car versus motorcycle financing:** 135 explicit advertised car-rate observations enter the Cat A/B dealer experiment. For Cat D, the MAS all-new-vehicle rate is only a market-wide proxy; no motorcycle-specific historical rate is imputed.
-- **Market-data timing:** daily FX, volatility, interest-rate and oil observations are treated as available in Singapore only on the following calendar day. Twenty-one-trading-day changes use data at least 30 calendar days earlier.
-- **Macro-data timing and revision caveat:** CPI is delayed 45 days; GDP and unemployment are delayed 75 days. SingStat tables are current-vintage and may include later revisions, so the experiment is not a real-time-vintage back-test.
-"""
+    st.subheader("Methodology & audit trail — v0.9")
+    st.write(
+        "This section documents what the indicator is designed to answer, how every forecast is produced, "
+        "which information is allowed at each historical cutoff, what changed since the original MVP, and "
+        "which results remain experimental. It is intended to make the public analysis reproducible and falsifiable."
     )
+
+    latest_completed_tender = str(df.sort_values(["month", "bidding_no"]).iloc[-1]["tender_id"])
+    audit_root = Path(__file__).parent / "data"
+    audit_dealer = pd.read_csv(audit_root / "dealer_observations_sgcarmart_2024_2026.csv")
+    audit_manifest = pd.read_csv(audit_root / "sgcarmart_source_manifest_2024_2026.csv")
+    audit_weights = pd.read_csv(audit_root / "lta_market_share_weights_2024_2026.csv")
+    audit_economy = pd.read_csv(audit_root / "economic_financial_features.csv")
+
+    with st.expander("1. Purpose, scope and current status", expanded=True):
+        st.markdown(
+            f"""
+The app studies the next COE bidding exercise separately for **Category A, Category B and Category D**. Its primary model predicts the dollar change from the preceding completed premium. The v0.9 probability layer then classifies the realised change as **Increase** above `+S$1,000`, **Stay** within `±S$1,000` inclusive, or **Decrease** below `−S$1,000`.
+
+The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
+
+This is public-interest statistical analysis, not a bidding recommendation or financial advice. No forecast, interval or probability is guaranteed.
+"""
+        )
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    {"Component": "Structural Ridge forecast", "Status": "Primary research model", "Claim": "Retrospective benchmark results disclosed"},
+                    {"Component": "Three-way probability layer", "Status": "Experimental", "Claim": "Not prospectively calibrated"},
+                    {"Component": "Structural + dealer signals", "Status": "Experimental", "Claim": "No general forecasting edge claimed"},
+                    {"Component": "Structural + economy/markets", "Status": "Experimental", "Claim": "Not promoted over structural"},
+                    {"Component": "Dealer Pressure Index", "Status": "Not published", "Claim": "No arbitrary weights or calibrated probabilities"},
+                ]
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+
+    with st.expander("2. Data sources and coverage", expanded=True):
+        st.markdown(
+            "The audit distinguishes the date information was economically available from the later date it was collected for research. "
+            "Source URLs and checksums are retained where applicable."
+        )
+        coverage_rows = [
+            {
+                "Data stream": "Official COE tender results",
+                "Coverage used": f"October 2015 to {latest_completed_tender}",
+                "Role": "Premium, quota, bids and tender ordering",
+            },
+            {
+                "Data stream": "SGCarMart dealer price lists",
+                "Coverage used": f"{audit_dealer['observed_at'].min()[:10]} to {audit_dealer['observed_at'].max()[:10]}",
+                "Role": f"{len(audit_manifest):,} PDFs; {len(audit_dealer):,} eligible Cat A/B observations",
+            },
+            {
+                "Data stream": "LTA new registrations",
+                "Coverage used": f"Weights through {audit_weights['observation_month'].max()}",
+                "Role": "Trailing 12-month dealer-brand aggregation weights",
+            },
+            {
+                "Data stream": "Economy and financial markets",
+                "Coverage used": f"{len(audit_economy):,} tender cutoffs from {audit_economy['tender_id'].min()} to {audit_economy['tender_id'].max()}",
+                "Role": "As-of macroeconomic, market and financing candidates",
+            },
+            {
+                "Data stream": "MAS new-vehicle hire purchase",
+                "Coverage used": "Underlying rate series ends April 2023",
+                "Role": "Market-wide financing proxy plus explicit staleness",
+            },
+        ]
+        st.dataframe(pd.DataFrame(coverage_rows), hide_index=True, width="stretch")
+        st.markdown(
+            "Dealer coverage comprises **20 requested brand groups represented by 23 source marques**. "
+            "Only 11 groups currently have observations that pass the strict model-eligibility rules. "
+            "The 135 explicitly advertised dealer finance rates are all from Honda material, so they are not treated as market-wide."
+        )
+
+    with st.expander("3. Structural forecasting model"):
+        st.markdown(
+            f"""
+**Target.** One-tender-ahead COE premium change, fitted separately for Categories A, B and D under `{MODEL_VERSION}`.
+
+**Inputs available before the target tender.** Lagged premiums; one- and two-tender momentum; lagged bid-to-quota ratio and excess demand; announced category quota; quota change; lagged Cat E premium, momentum and bid pressure; announced Cat E quota; and cyclical month/exercise seasonality.
+
+**Estimator.** A standardized Ridge regression. At every forecast origin, the regularization strength is selected again using time-ordered inner validation folds contained entirely inside that origin's training history.
+
+**Supply convention.** Historical back-tests treat target-tender category and Cat E quotas as announced before bidding. For the live next-exercise forecast, the last completed quotas are carried forward until a separately timestamped upcoming announcement is ingested. This is a disclosed neutral assumption, not observed future supply.
+"""
+        )
+
+    with st.expander("4. Walk-forward evaluation, benchmarks and uncertainty"):
+        st.markdown(
+            """
+The outer evaluation is an expanding walk-forward test with a minimum 60-tender training window. Each row is a genuine one-step forecast: the model is fitted only on earlier tenders and the prediction is recorded before moving to the next outcome.
+
+The structural model is compared at identical origins with three simple baselines:
+
+- **Persistence:** next premium equals the latest completed premium.
+- **Historical mean drift:** latest premium plus the average earlier change.
+- **Two-tender seasonal:** next premium equals the premium two exercises earlier.
+
+Reported diagnostics include direction accuracy, MAE, RMSE and improvement over the lowest-MAE naïve benchmark. The nominal 80% interval is prequential conformal: its radius uses only absolute errors from earlier outer forecasts. Historical coverage describes the test sample and is not a prospective guarantee.
+"""
+        )
+
+    with st.expander("5. Three-way next-exercise probabilities"):
+        st.markdown(
+            f"""
+The probability layer `{DIRECTION_PROBABILITY_VERSION}` does not assume normally distributed errors and does not convert the point forecast through an arbitrary confidence formula. It adds the current structural change forecast to each earlier out-of-sample residual, counts how many resulting changes fall into Increase, Stay and Decrease, and applies one-count Laplace smoothing to avoid unjustified zero probabilities.
+
+Its own back-test is also prequential. A historical probability is produced only after 20 earlier out-of-sample residuals exist. It is scored using multiclass Brier score, log loss and highest-probability three-way accuracy, with probabilities based only on earlier outcome frequencies as the benchmark. Future outcomes cannot revise earlier probabilities.
+
+The point forecast and highest-probability outcome may differ when the historical error distribution is asymmetric. These probabilities remain **experimental and uncalibrated prospectively**, even where retrospective Brier score beats the frequency baseline.
+"""
+        )
+
+    with st.expander("6. Dealer-signal experiment"):
+        st.markdown(
+            """
+The SGCarMart layer reconstructs dated 2024–2026 authorised-dealer price-list signals: advertised package prices and changes, COE rebates, guaranteed-COE terms and bid counts, finance/trade-in/cash incentives, promotion deadlines and roadshows. Brand aggregation uses LTA registrations from the preceding 12 complete months.
+
+Only pages with an explicit Cat A or Cat B label and extracted advertised prices enter the model. Source-marque identity remains in audit notes when brands are grouped, including Toyota/Lexus, Chery/Omoda/Jaecoo and GAC/Aion. Unclassified pages remain auditable context rather than being imputed. Category D is excluded because the car price-list archive does not represent motorcycle dealers.
+
+The experiment fits an expanding-window Ridge correction to the already out-of-sample structural residual. Cat A showed a small retrospective MAE improvement, while Cat B worsened materially. This mixed evidence is not a validated dealer forecasting edge, and no composite Dealer Pressure Index is published.
+"""
+        )
+
+    with st.expander("7. Economy, markets and financing experiment"):
+        st.markdown(
+            f"""
+The candidate `{ECONOMIC_MODEL_VERSION}` adds 15 tender-aligned variables: SGD/USD level and change; VIX level and change; US 10-year Treasury yield and change; Brent price and return; Nasdaq Composite level and return; Singapore real-GDP growth, CPI inflation and unemployment; and the MAS three-year new-vehicle hire-purchase rate plus its age in days.
+
+Daily international observations are treated as available in Singapore only on the following calendar day. CPI is delayed 45 days; GDP and unemployment are delayed 75 days. Exact official tender-opening timestamps are used from 2024 onward; earlier tenders retain an ordered exercise-date approximation.
+
+The 13-variable economy core produced mixed, marginal results. Adding financing worsened MAE versus both structural-only and economy-core models in all three categories. These variants therefore remain diagnostic research layers rather than the primary forecast. SingStat macro series are current-vintage and may contain later revisions, so this is not a fully vintage-correct real-time back-test.
+"""
+        )
+
+    with st.expander("8. Leakage controls and historical availability"):
+        st.markdown(
+            """
+- Premiums, bids, bid pressure, excess demand, momentum and Cat E outcomes are lagged by at least one completed tender.
+- Outer-test outcomes never enter training, inner tuning, interval construction or probability estimation at that origin.
+- Date-only historical SGCarMart documents are conservatively assigned to 23:59:59 Singapore time on the stated date unless contemporaneous evidence proves an earlier public time.
+- Dealer records store `observed_at`, evidenced `available_at`, later `retrieved_at`, source URL and PDF checksum separately.
+- Daily market observations receive a following-Singapore-day availability time; 21-trading-day changes use observations at least 30 calendar days earlier.
+- Current-vintage macro revisions, carried-forward financing rates and live-quota assumptions are disclosed rather than silently treated as contemporaneous data.
+"""
+        )
+
     availability = pd.DataFrame(
         [
             {"Feature family": family, "Availability rule": rule}
             for family, rule in {**FEATURE_AVAILABILITY, **ECONOMIC_FEATURE_AVAILABILITY}.items()
         ]
     )
-    st.dataframe(availability, hide_index=True, width="stretch")
-    st.markdown(
-        "Sources: [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) • "
-        "[LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) • "
-        "[SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) • "
-        "[MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) • "
-        "[SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) • "
-        "[FRED economic data](https://fred.stlouisfed.org/)"
-    )
+    with st.expander("9. Feature-by-feature availability rules"):
+        st.dataframe(availability, hide_index=True, width="stretch")
+
+    with st.expander("10. MVP audit findings and version history"):
+        st.markdown(
+            """
+The original MVP audit found that comma-formatted official numbers could be coerced to missing values, recent tenders could therefore disappear, Ridge features were unscaled, month was treated as ordinal rather than cyclical, Cat E and announced supply were absent, and evaluation showed only persistence MAE. The dealer template also lacked sufficient provenance and enforceable historical cutoffs. The original premium and bid-pressure inputs were lagged, so no direct same-tender outcome leakage was found.
+
+- **Structural v0.5:** fixed numeric parsing; standardized Ridge; cyclical seasonality; Cat E and supply features; nested time-ordered tuning; three naïve benchmarks; MAE, RMSE, direction and conformal coverage.
+- **Research v0.8:** October 2015 common boundary; 20-brand-group SGCarMart reconstruction; LTA market-share weighting; economy, markets and vehicle-financing experiments; exact official cutoffs from 2024.
+- **Interface/model v0.9:** Increase/Stay/Decrease probability layer, probability benchmarking, complete indicator tooltips and this consolidated methodology/audit narrative.
+"""
+        )
+
+    with st.expander("11. Sources, reproducibility and known limitations"):
+        st.markdown(
+            """
+**Primary sources:** [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) · [LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) · [SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) · [MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) · [SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) · [FRED economic data](https://fred.stlouisfed.org/)
+
+**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; pre-2024 tender timestamps are approximate; and the next-exercise quota currently uses a carry-forward assumption.
+
+The repository versions the model code, methodology, source manifests, checksums, tender schedule, feature datasets and back-test outputs. Negative results remain visible. A credible calibration or forecasting-edge claim requires future predictions frozen before bidding and evaluated after the outcomes arrive.
+"""
+        )
     st.caption("Experimental analysis, not financial advice. Model and methodology are disclosed so negative results remain visible.")
