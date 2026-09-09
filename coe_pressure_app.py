@@ -25,13 +25,14 @@ from economic_features import (
     ECONOMIC_MODEL_VERSION,
     validate_economic_features,
 )
+from official_results import parse_one_motoring_final_results
 from tender_timing import exercise_status, load_tender_schedule
 
 
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.9 three-way next-exercise outlook + indicator tooltips • "
+    f"v0.10 official final-results bridge + three-way outlook • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -112,14 +113,31 @@ def format_signed_sgd(value: float) -> str:
 
 DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
 URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
+ONEMOTORING_RESULTS_URL = (
+    "https://onemotoring.lta.gov.sg/content/onemotoring/home/buying/coe-open-bidding.html"
+)
 
 
 @st.cache_data(ttl=300)
-def load_coe(cache_version: str) -> pd.DataFrame:
+def load_coe(cache_version: str) -> tuple[pd.DataFrame, list[str]]:
     del cache_version  # Included in the cache key to invalidate model-regime changes.
     response = requests.get(URL, timeout=20)
     response.raise_for_status()
-    return prepare_coe_data(response.json()["result"]["records"])
+    records = list(response.json()["result"]["records"])
+    direct_tenders: list[str] = []
+    try:
+        live_response = requests.get(ONEMOTORING_RESULTS_URL, timeout=20)
+        live_response.raise_for_status()
+        final_records = parse_one_motoring_final_results(live_response.text)
+    except (requests.RequestException, ValueError):
+        final_records = []
+    existing = {(row["month"], str(row["bidding_no"]), row["vehicle_class"]) for row in records}
+    for row in final_records:
+        key = (row["month"], row["bidding_no"], row["vehicle_class"])
+        if key not in existing:
+            records.append(row)
+            direct_tenders.append(f"{row['month']}-{row['bidding_no']}")
+    return prepare_coe_data(records), sorted(set(direct_tenders))
 
 
 @st.cache_data(show_spinner=False)
@@ -129,7 +147,7 @@ def run_backtest(data: pd.DataFrame, category: str, cache_version: str) -> pd.Da
 
 
 try:
-    df = load_coe(MODEL_VERSION)
+    df, direct_result_tenders = load_coe(MODEL_VERSION)
 except Exception as error:
     st.error(f"Could not load or validate the official data.gov.sg dataset: {error}")
     st.stop()
@@ -137,6 +155,12 @@ except Exception as error:
 tender_schedule = load_tender_schedule(
     Path(__file__).parent / "data" / "tender_schedule_2024_2026.csv"
 )
+
+if direct_result_tenders:
+    st.success(
+        f"Official final result {direct_result_tenders[-1]} loaded directly from "
+        f"[LTA OneMotoring]({ONEMOTORING_RESULTS_URL}) while the data.gov.sg archive synchronises."
+    )
 
 st.info(
     f"Comparable analysis window: {ANALYSIS_START:%B %Y} onward. "
@@ -438,7 +462,7 @@ with tabs[4]:
     )
 
 with tabs[5]:
-    st.subheader("Methodology & audit trail — v0.9")
+    st.subheader("Methodology & audit trail — v0.10")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -481,8 +505,9 @@ This is public-interest statistical analysis, not a bidding recommendation or fi
     with st.expander("2. Data sources and coverage", expanded=True):
         st.markdown(
             "The audit distinguishes the date information was economically available from the later date it was collected for research. "
-            "Source URLs and checksums are retained where applicable. The official completed-results feed is checked with a five-minute "
-            "application cache; provisional closing prices are not admitted to model training while LTA says results are being finalised."
+            "Source URLs and checksums are retained where applicable. Official data.gov.sg results and LTA OneMotoring are checked with a "
+            "five-minute application cache. A confirmed OneMotoring result can bridge an archive delay, but provisional closing prices are "
+            "not admitted to model training while LTA says results are being finalised."
         )
         coverage_rows = [
             {
@@ -608,6 +633,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **Structural v0.5:** fixed numeric parsing; standardized Ridge; cyclical seasonality; Cat E and supply features; nested time-ordered tuning; three naïve benchmarks; MAE, RMSE, direction and conformal coverage.
 - **Research v0.8:** October 2015 common boundary; 20-brand-group SGCarMart reconstruction; LTA market-share weighting; economy, markets and vehicle-financing experiments; exact official cutoffs from 2024.
 - **Interface/model v0.9:** Increase/Stay/Decrease probability layer, probability benchmarking, complete indicator tooltips and this consolidated methodology/audit narrative.
+- **Data refresh v0.10:** strict final-result ingestion from LTA OneMotoring when the data.gov.sg archive is delayed; provisional closing tables remain excluded.
 """
         )
 

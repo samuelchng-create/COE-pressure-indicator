@@ -1,4 +1,16 @@
-# v0.9 three-way probability, dealer and economy methodology
+# v0.10 official-result ingestion, probability, dealer and economy methodology
+
+## v0.10 official final-results bridge
+
+The app normally reads completed tender records from data.gov.sg. Because that
+archive can synchronise after LTA publishes the result on OneMotoring, the app
+also checks the official OneMotoring COE Open Bidding page. It accepts a record
+from that page only when a confirmed `Results for ... Open Bidding Exercise`
+heading is present and both result tables contain Categories A–E exactly once,
+including premium, quota, bids received and successful bids. A live bidding
+table or a page saying results are being finalised is not admitted to model
+training. Once data.gov.sg contains the same tender, its archive record takes
+precedence and the bridge adds nothing. Both checks use a five-minute cache.
 
 ## Common analysis window
 
