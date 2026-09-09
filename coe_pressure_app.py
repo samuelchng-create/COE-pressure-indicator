@@ -25,6 +25,7 @@ from economic_features import (
     ECONOMIC_MODEL_VERSION,
     validate_economic_features,
 )
+from tender_timing import exercise_status, load_tender_schedule
 
 
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
@@ -108,6 +109,7 @@ def format_signed_sgd(value: float) -> str:
     sign = "+" if value >= 0 else "−"
     return f"{sign}S${abs(value):,.0f}"
 
+
 DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
 URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
 
@@ -131,6 +133,10 @@ try:
 except Exception as error:
     st.error(f"Could not load or validate the official data.gov.sg dataset: {error}")
     st.stop()
+
+tender_schedule = load_tender_schedule(
+    Path(__file__).parent / "data" / "tender_schedule_2024_2026.csv"
+)
 
 st.info(
     f"Comparable analysis window: {ANALYSIS_START:%B %Y} onward. "
@@ -172,6 +178,10 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         direction_backtest = prequential_direction_probabilities(backtest)
         next_forecast = forecast_next_tender(df, category, backtest)
         st.subheader("Next bidding exercise: experimental three-way outlook")
+        timing = exercise_status(tender_schedule, next_forecast.tender_id)
+        if timing is not None:
+            timing_level, timing_message, timing_source = timing
+            getattr(st, timing_level)(f"{timing_message} [Official LTA schedule]({timing_source})")
         p1, p2, p3, p4, p5 = st.columns(5)
         p1.metric("Most likely outcome", next_forecast.predicted_direction, help=METRIC_HELP["predicted_outcome"])
         p2.metric("Increase probability", f"{next_forecast.probabilities['Increase']:.1%}", help=METRIC_HELP["outcome_probability"])
@@ -448,6 +458,8 @@ with tabs[5]:
 The app studies the next COE bidding exercise separately for **Category A, Category B and Category D**. Its primary model predicts the dollar change from the preceding completed premium. The v0.9 probability layer then classifies the realised change as **Increase** above `+S$1,000`, **Stay** within `±S$1,000` inclusive, or **Decrease** below `−S$1,000`.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
+
+The next-exercise panel resolves its opening and closing times from the versioned official LTA schedule. While an exercise is open it displays the live closing deadline; after the deadline and before the results feed updates, it explicitly says that the official result is pending.
 
 This is public-interest statistical analysis, not a bidding recommendation or financial advice. No forecast, interval or probability is guaranteed.
 """
