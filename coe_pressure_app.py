@@ -114,7 +114,7 @@ DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
 URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=300)
 def load_coe(cache_version: str) -> pd.DataFrame:
     del cache_version  # Included in the cache key to invalidate model-regime changes.
     response = requests.get(URL, timeout=20)
@@ -481,7 +481,8 @@ This is public-interest statistical analysis, not a bidding recommendation or fi
     with st.expander("2. Data sources and coverage", expanded=True):
         st.markdown(
             "The audit distinguishes the date information was economically available from the later date it was collected for research. "
-            "Source URLs and checksums are retained where applicable."
+            "Source URLs and checksums are retained where applicable. The official completed-results feed is checked with a five-minute "
+            "application cache; provisional closing prices are not admitted to model training while LTA says results are being finalised."
         )
         coverage_rows = [
             {
