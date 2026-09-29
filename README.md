@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.9 three-way outlook
+# Singapore COE Pressure Indicator — v0.11 September 2026 refresh
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -7,6 +7,17 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is prospectively calibrated. Negative benchmark results remain visible.
+
+## v0.11 current refresh
+
+- Extends official completed COE outcomes through September 2026 Exercise 2.
+- Refreshes tender-aligned market and macroeconomic features through that
+  tender using the same historical-availability rules.
+- Extends structural and economy comparisons to 195 forecasts per category,
+  and the eligible dealer comparison to 53 forecasts for Categories A and B.
+- Keeps the audited SGCarMart source corpus through 1 September 2026; no later
+  dealer observations are imputed when a dated source document is unavailable.
+- Targets October 2026 Exercise 1 in the live next-exercise outlook.
 
 Every chart, training window, tuning fold, uncertainty interval and benchmark
 now uses a common October 2015 analysis start. Earlier tenders are excluded to
@@ -63,8 +74,8 @@ The refreshed archive contains 1,487 source PDFs, 3,774 auditable page rows and
 1,124 model-eligible observations from 11 grouped brands. It contains 135 explicit
 advertised car-finance rates, all from Honda documents and ranging from 2.58%
 to 2.78%; this narrow coverage is disclosed. The latest SGCarMart document is
-dated 1 September 2026. Over 51 paired forecasts per category, the v0.8 dealer
-variant improved Cat A MAE by 1.27% but worsened Cat B MAE by 10.71%. The small
+dated 1 September 2026. Over 53 paired forecasts per category, the v0.8 dealer
+variant improved Cat A MAE by 1.51% but worsened Cat B MAE by 10.74%. The small
 retrospective Cat A result is not treated as a validated edge, and no calibrated
 Dealer Pressure Index or probabilities are published.
 
@@ -84,12 +95,12 @@ Dealer Pressure Index or probabilities are published.
 - Uses exact official LTA tender-opening cutoffs from 2024 onward. Earlier
   tenders retain the ordered first/second-exercise date approximation because
   the results table does not contain historical opening timestamps.
-- Runs a three-way paired expanding-window comparison at the same 193 forecast
+- Runs a three-way paired expanding-window comparison at the same 195 forecast
   origins: structural, structural plus the 13-variable economy block, and that
   block plus financing. Relative to the economy block, financing worsened MAE
-  by 0.33% for Cat A, 1.21% for Cat B and 1.02% for Cat D. Relative to the
-  structural model, the 15-variable version worsened MAE by 0.70%, 0.78% and
-  5.36%, respectively. It is not promoted over the structural model.
+  by 0.33% for Cat A, 1.20% for Cat B and 1.02% for Cat D. Relative to the
+  structural model, the 15-variable version worsened MAE by 0.76%, 0.87% and
+  5.04%, respectively. It is not promoted over the structural model.
 - The official rate currently ends in April 2023. The explicit staleness
   feature prevents a carried-forward value from being mistaken for a fresh
   observation. No unsupported motorcycle-specific history is imputed.
@@ -112,9 +123,9 @@ Dealer Pressure Index or probabilities are published.
 - Builds 80% prequential conformal intervals from earlier out-of-sample errors
   only.
 
-Across 193 post-policy forecasts, structural MAE is S$2,844 for Cat A, S$3,933
-for Cat B and S$427 for Cat D. It beats the best naïve MAE by 5.45% for Cat A
-and 1.22% for Cat B, but trails it by 4.84% for Cat D.
+Across 195 post-policy forecasts, structural MAE is S$2,842 for Cat A, S$3,923
+for Cat B and S$431 for Cat D. It beats the best naïve MAE by about 5.4% for Cat A
+and 1.2% for Cat B, but trails it by about 4.7% for Cat D.
 
 See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and
 [docs/DEALER_SIGNALS.md](docs/DEALER_SIGNALS.md), plus

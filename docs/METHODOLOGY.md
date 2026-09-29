@@ -1,4 +1,4 @@
-# v0.10 official-result ingestion, probability, dealer and economy methodology
+# v0.11 official-result ingestion, probability, dealer and economy methodology
 
 ## v0.10 official final-results bridge
 
@@ -163,11 +163,11 @@ These macro rules are conservative publication buffers, not reconstructed
 release timestamps. SingStat serves current-vintage data that may contain later
 revisions. Therefore the economy results are a revision-risk sensitivity test, not
 a fully vintage-correct real-time back-test. The post-policy paired test covers
-193 forecasts per category. The 13-variable economy core worsens MAE by 0.37%
-for Cat A, improves it by 0.43% for Cat B, and worsens it by 4.29% for Cat D.
+195 forecasts per category. The 13-variable economy core worsens MAE by 0.44%
+for Cat A, improves it by 0.33% for Cat B, and worsens it by 3.97% for Cat D.
 This mixed, marginal result leaves the
 variant as a visible research candidate rather than the deployed primary model.
 Adding financing to that economy block worsens MAE a further 0.33% for Cat A,
-1.21% for Cat B and 1.02% for Cat D. Against structural-only, the 15-variable
-variant worsens MAE by 0.70%, 0.78% and 5.36%, respectively, so it also remains
+1.20% for Cat B and 1.02% for Cat D. Against structural-only, the 15-variable
+variant worsens MAE by 0.76%, 0.87% and 5.04%, respectively, so it also remains
 experimental.

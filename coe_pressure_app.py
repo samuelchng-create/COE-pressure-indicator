@@ -32,7 +32,7 @@ from tender_timing import exercise_status, load_tender_schedule
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.10 official final-results bridge + three-way outlook • "
+    f"v0.11 September 2026 data refresh + three-way outlook • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -462,7 +462,7 @@ with tabs[4]:
     )
 
 with tabs[5]:
-    st.subheader("Methodology & audit trail — v0.10")
+    st.subheader("Methodology & audit trail — v0.11")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -634,6 +634,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **Research v0.8:** October 2015 common boundary; 20-brand-group SGCarMart reconstruction; LTA market-share weighting; economy, markets and vehicle-financing experiments; exact official cutoffs from 2024.
 - **Interface/model v0.9:** Increase/Stay/Decrease probability layer, probability benchmarking, complete indicator tooltips and this consolidated methodology/audit narrative.
 - **Data refresh v0.10:** strict final-result ingestion from LTA OneMotoring when the data.gov.sg archive is delayed; provisional closing tables remain excluded.
+- **Data refresh v0.11:** official COE outcomes and paired dealer/economy walk-forward evaluations extended through September 2026 Exercise 2; tender-aligned markets and macro features retrieved again on 29 September 2026.
 """
         )
 
