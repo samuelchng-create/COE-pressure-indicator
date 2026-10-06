@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.11 September 2026 refresh
+# Singapore COE Pressure Indicator — v0.12 multi-cycle and tender-timing model
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -7,6 +7,43 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is prospectively calibrated. Negative benchmark results remain visible.
+
+## v0.12 direct multi-cycle outlook
+
+- Adds separately trained direct forecasts for 1, 2, 4 and 6 bidding exercises
+  ahead; later forecasts are not recursively chained from earlier predictions.
+- Embargoes every multi-horizon training label until its target exercise had
+  actually completed at the historical forecast origin.
+- Uses versioned official LTA opening and closing schedules from 2017 through
+  2026. The 2017 calendar uses LTA's revised February–May schedule.
+- Measures actual close-to-close demand exposure, flags intervals of at least
+  19 days, and adds calendar span, next-gap length, quota per week, lagged bids
+  per week and extended-gap counts to the experimental horizon model.
+- Uses a dealer-oriented ±S$2,000 Stay band for Categories A and B while
+  retaining ±S$1,000 for Category D. Exact dollar forecasts remain visible.
+- Maps 560 dated guaranteed-COE package observations to both their stated bid
+  count and the official calendar date of the last covered exercise.
+- Re-runs paired dealer, economy/markets and vehicle-financing candidates at
+  every horizon. Dealer residual labels receive the same terminal-target
+  embargo as the structural labels.
+- Reports horizon-matched persistence, historical-drift and horizon-momentum
+  benchmarks plus MAE, RMSE, three-way accuracy, Brier score and interval
+  coverage. Models that fail to beat the best naïve MAE remain labelled as
+  research candidates.
+
+The timing-aware model beats the best naïve MAE for Cat A at one exercise
+(+7.1%) and for Cat B at one, two and four exercises (+5.0%, +2.9% and +1.6%).
+It does not beat the best naïve MAE for the remaining category/horizon pairs,
+so the existing one-cycle structural model remains the primary published model.
+
+The 13-variable economy/markets candidate improves structural MAE modestly for
+Cat A at 1/2/4/6 exercises (+0.2%, +1.3%, +3.9%, +4.3%) and Cat B (+0.7%,
++1.6%, +0.1%, +1.3%), but worsens Cat D at every horizon. Adding the carried
+vehicle-financing proxy is neutral only for Cat B at two exercises (+0.04%) and
+worsens the other comparisons. On the smaller reconstructed 2024–2026 sample,
+dealer signals improve only Cat A at one exercise (+3.2%); the other seven
+category/horizon tests worsen MAE. These retrospective candidates do not alter
+the live structural forecast and are not presented as calibrated edges.
 
 ## v0.11 current refresh
 
@@ -144,6 +181,10 @@ streamlit run coe_pressure_app.py
 pytest -q
 python scripts/run_backtest.py
 python scripts/build_tender_schedule.py
+python scripts/run_horizon_experiment.py
+python scripts/run_horizon_signal_experiments.py
+python scripts/build_dealer_horizon_alignment.py
+python scripts/validate_horizon_dataset.py
 python scripts/run_dealer_experiment.py
 python scripts/validate_sgcarmart_dataset.py
 python scripts/build_economic_features.py

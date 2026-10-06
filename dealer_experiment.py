@@ -69,9 +69,17 @@ def walk_forward_dealer_uplift(
         return pd.DataFrame()
     rows = []
     prior_errors: list[float] = []
-    for position in range(min_train, len(merged)):
-        train = merged.iloc[:position]
+    for position in range(len(merged)):
         test = merged.iloc[[position]]
+        if {"origin_position", "target_position"}.issubset(merged.columns):
+            # Multi-horizon residual labels overlap. At a historical forecast
+            # origin, admit a dealer-training row only after its terminal COE
+            # outcome had completed. One-step tests retain their prior behavior.
+            train = merged[merged["target_position"] <= int(test.iloc[0]["origin_position"])]
+        else:
+            train = merged.iloc[:position]
+        if len(train) < min_train:
+            continue
         alpha = _select_alpha(train, alphas)
         model = _model(alpha)
         model.fit(train[DEALER_FEATURE_COLUMNS], train["structural_residual"])

@@ -32,7 +32,7 @@ from tender_timing import exercise_status, load_tender_schedule
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.11 September 2026 data refresh + three-way outlook • "
+    f"v0.12 timing-aware 1/2/4/6-cycle outlook • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -74,7 +74,10 @@ METRIC_HELP = {
     "probability_backtests": "Historical one-step probability forecasts made after at least 20 earlier out-of-sample errors were available.",
     "brier_score": "Multiclass Brier score: the average squared difference between predicted probabilities and actual outcomes. Lower is better; zero is perfect.",
     "brier_improvement": "Percentage reduction in Brier score versus probabilities based only on earlier outcome frequencies. Positive means better probability accuracy.",
-    "three_way_accuracy": "Percentage of back-tested tenders where the highest-probability outcome matched Increase, Stay or Decrease under the ±S$1,000 rule.",
+    "three_way_accuracy": "Percentage of back-tested tenders where the highest-probability outcome matched Increase, Stay or Decrease under the disclosed band for that view.",
+    "horizon": "How many completed bidding exercises ahead the direct model predicts. Forecasts are not chained together.",
+    "calendar_span": "Actual calendar days from the latest completed exercise to the target exercise, using the official LTA schedule.",
+    "extended_gaps": "Number of intervals of at least 19 days inside the forecast horizon. These intervals can accumulate roughly three weeks of demand.",
 }
 
 REQUESTED_BRAND_GROUPS = {
@@ -153,7 +156,7 @@ except Exception as error:
     st.stop()
 
 tender_schedule = load_tender_schedule(
-    Path(__file__).parent / "data" / "tender_schedule_2024_2026.csv"
+    Path(__file__).parent / "data" / "tender_schedule_2017_2026.csv"
 )
 
 if direct_result_tenders:
@@ -167,7 +170,7 @@ st.info(
     "Earlier tenders are excluded from charts, training, tuning, intervals and benchmark metrics."
 )
 
-tabs = st.tabs([*CATEGORIES, "Dealer-signal experiment", "Economy & markets", "Methodology & audit"])
+tabs = st.tabs([*CATEGORIES, "Multi-cycle outlook", "Dealer-signal experiment", "Economy & markets", "Methodology & audit"])
 
 for tab, category in zip(tabs[:3], CATEGORIES):
     with tab:
@@ -281,6 +284,158 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         )
 
 with tabs[3]:
+    st.subheader("Dealer-aligned multi-cycle outlook")
+    st.write(
+        "Direct forecasts cover 1, 2, 4 and 6 bidding exercises. Calendar exposure comes from official LTA closing dates, "
+        "so an interval that accumulates about three weeks of demand is not treated as an ordinary fortnight."
+    )
+    horizon_forecasts_path = Path(__file__).parent / "data" / "horizon_live_forecasts.csv"
+    horizon_metrics_path = Path(__file__).parent / "data" / "horizon_backtest_metrics.csv"
+    horizon_predictions_path = Path(__file__).parent / "data" / "horizon_backtest_predictions.csv"
+    horizon_gap_path = Path(__file__).parent / "data" / "horizon_gap_metrics.csv"
+    horizon_economic_path = Path(__file__).parent / "data" / "horizon_economic_metrics.csv"
+    horizon_dealer_path = Path(__file__).parent / "data" / "horizon_dealer_metrics.csv"
+    if horizon_forecasts_path.exists() and horizon_metrics_path.exists():
+        horizon_forecasts = pd.read_csv(horizon_forecasts_path)
+        horizon_metrics = pd.read_csv(horizon_metrics_path)
+        h_category = st.selectbox("Category", CATEGORIES, key="horizon_category")
+        h_horizon = st.selectbox("Forecast horizon", (1, 2, 4, 6), format_func=lambda value: f"{value} exercise{'s' if value > 1 else ''}", key="horizon_cycles", help=METRIC_HELP["horizon"])
+        forecast = horizon_forecasts[
+            horizon_forecasts["category"].eq(h_category) & horizon_forecasts["horizon"].eq(h_horizon)
+        ].iloc[0]
+        structural = horizon_metrics[
+            horizon_metrics["category"].eq(h_category)
+            & horizon_metrics["horizon"].eq(h_horizon)
+            & horizon_metrics["model"].eq("structural")
+        ].iloc[0]
+        band = 1_000 if h_category == "Category D" else 2_000
+        f1, f2, f3, f4, f5 = st.columns(5)
+        f1.metric("Target exercise", forecast.target_tender_id)
+        f2.metric("Most likely outcome", forecast.predicted_direction)
+        f3.metric("Predicted premium", f"S${forecast.predicted_premium:,.0f}")
+        f4.metric("Predicted change", format_signed_sgd(forecast.predicted_change))
+        f5.metric("80% interval", f"S${forecast.lower:,.0f}–S${forecast.upper:,.0f}")
+        g1, g2, g3, g4, g5 = st.columns(5)
+        g1.metric("Calendar span", f"{forecast.calendar_days:,.0f} days", help=METRIC_HELP["calendar_span"])
+        g2.metric("Extended gaps", f"{int(forecast.extended_gap_count)}", help=METRIC_HELP["extended_gaps"])
+        g3.metric("Increase", f"{forecast.probability_increase:.1%}")
+        g4.metric("Stay", f"{forecast.probability_stay:.1%}")
+        g5.metric("Decrease", f"{forecast.probability_decrease:.1%}")
+        if forecast.extended_gap_count:
+            st.warning(
+                f"This horizon contains {int(forecast.extended_gap_count)} extended interval(s) of at least 19 days. "
+                "The timing-aware model includes the longer demand-accumulation exposure."
+            )
+        st.caption(
+            f"{h_category} uses a dealer-oriented Stay band of ±S${band:,.0f}. The exact dollar forecast remains visible. "
+            "Only the next announced quota is used; later-horizon supply is not treated as known."
+        )
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("Back-tests", f"{int(structural.n):,}")
+        m2.metric("MAE", f"S${structural.MAE:,.0f}", help=METRIC_HELP["mae"])
+        m3.metric("RMSE", f"S${structural.RMSE:,.0f}", help=METRIC_HELP["rmse"])
+        m4.metric("Three-way accuracy", f"{structural.three_way_accuracy:.1%}", help=METRIC_HELP["three_way_accuracy"])
+        m5.metric("MAE vs best naïve", f"{structural.MAE_improvement_vs_best_naive:+.1%}", help=METRIC_HELP["mae_improvement_naive"])
+        if structural.MAE_improvement_vs_best_naive <= 0:
+            st.warning("At this horizon the timing-aware structural model does not beat the best naïve MAE; no forecasting edge is claimed.")
+        if horizon_gap_path.exists():
+            gap_metrics = pd.read_csv(horizon_gap_path)
+            gap_view = gap_metrics[
+                gap_metrics["category"].eq(h_category) & gap_metrics["horizon"].eq(h_horizon)
+            ].copy()
+            if len(gap_view) > 1:
+                gap_view["segment"] = gap_view["segment"].map(
+                    {"regular_path": "No extended gap", "contains_extended_gap": "Contains ≥19-day gap"}
+                )
+                gap_view["MAE"] = gap_view["MAE"].map(lambda value: f"S${value:,.0f}")
+                gap_view["RMSE"] = gap_view["RMSE"].map(lambda value: f"S${value:,.0f}")
+                gap_view["mean_calendar_days"] = gap_view["mean_calendar_days"].map(lambda value: f"{value:.1f}")
+                st.write("**Performance by calendar-gap exposure**")
+                st.dataframe(
+                    gap_view.rename(columns={"segment": "Path", "n": "Forecasts", "mean_calendar_days": "Mean calendar days"})[
+                        ["Path", "Forecasts", "MAE", "RMSE", "Mean calendar days"]
+                    ],
+                    hide_index=True,
+                    width="stretch",
+                )
+        if horizon_economic_path.exists():
+            with st.expander("Dealer, economy and financing tests at this horizon"):
+                st.write(
+                    "These are paired historical candidate tests. They do not alter the live forecast above, and a positive retrospective result is not treated as prospective calibration."
+                )
+                economic_metrics = pd.read_csv(horizon_economic_path)
+                economic_view = economic_metrics[
+                    economic_metrics["category"].eq(h_category)
+                    & economic_metrics["horizon"].eq(h_horizon)
+                    & economic_metrics["model"].ne("structural")
+                ][
+                    ["model", "n", "MAE", "RMSE", "three_way_accuracy", "interval_coverage", "MAE_improvement_vs_comparison"]
+                ].copy()
+                economic_view["model"] = economic_view["model"].map(
+                    {
+                        "structural_plus_economy": "Structural + economy/markets",
+                        "structural_plus_economy_financing": "Structural + economy/markets + financing",
+                    }
+                )
+                economic_view.columns = ["Candidate", "Forecasts", "MAE", "RMSE", "Three-way accuracy", "Interval coverage", "MAE vs structural"]
+                st.write("**Economy, markets and vehicle financing**")
+                st.dataframe(
+                    economic_view.style.format(
+                        {
+                            "MAE": "S${:,.0f}",
+                            "RMSE": "S${:,.0f}",
+                            "Three-way accuracy": "{:.1%}",
+                            "Interval coverage": "{:.1%}",
+                            "MAE vs structural": "{:+.1%}",
+                        }
+                    ),
+                    hide_index=True,
+                    width="stretch",
+                )
+                if h_category != "Category D" and horizon_dealer_path.exists():
+                    dealer_metrics = pd.read_csv(horizon_dealer_path)
+                    dealer_view = dealer_metrics[
+                        dealer_metrics["category"].eq(h_category)
+                        & dealer_metrics["horizon"].eq(h_horizon)
+                        & dealer_metrics["model"].eq("structural_plus_dealer")
+                    ][
+                        ["n", "MAE", "RMSE", "three_way_accuracy", "interval_coverage", "MAE_improvement_vs_comparison"]
+                    ].copy()
+                    dealer_view.insert(0, "Candidate", "Structural + dealer signals")
+                    dealer_view.columns = ["Candidate", "Forecasts", "MAE", "RMSE", "Three-way accuracy", "Interval coverage", "MAE vs structural"]
+                    st.write("**SGCarMart dealer signals**")
+                    st.dataframe(
+                        dealer_view.style.format(
+                            {
+                                "MAE": "S${:,.0f}",
+                                "RMSE": "S${:,.0f}",
+                                "Three-way accuracy": "{:.1%}",
+                                "Interval coverage": "{:.1%}",
+                                "MAE vs structural": "{:+.1%}",
+                            }
+                        ),
+                        hide_index=True,
+                        width="stretch",
+                    )
+                    st.caption(
+                        "Dealer comparisons use the smaller 2024–2026 reconstructed archive and embargo each residual label until its terminal target has completed. Category D has no dealer-price-list test."
+                    )
+        overview = horizon_forecasts[horizon_forecasts["category"].eq(h_category)][
+            ["horizon", "target_tender_id", "calendar_days", "extended_gap_count", "predicted_premium", "predicted_change", "predicted_direction"]
+        ].copy()
+        overview.columns = ["Exercises", "Target", "Calendar days", "Extended gaps", "Predicted premium", "Predicted change", "Outcome"]
+        st.dataframe(overview, hide_index=True, width="stretch")
+        if horizon_predictions_path.exists():
+            st.download_button(
+                "Download multi-horizon back-test predictions",
+                Path(horizon_predictions_path).read_bytes(),
+                "horizon_backtest_predictions.csv",
+                "text/csv",
+            )
+    else:
+        st.warning("The multi-horizon audit outputs are not available in this deployment.")
+
+with tabs[4]:
     st.subheader("SGCarMart 2024–2026 dealer-signal research dataset")
     st.write(
         "This is an ingestion and validation layer, not a published Dealer Pressure Index. "
@@ -288,6 +443,7 @@ with tabs[3]:
     )
     dataset_path = Path(__file__).parent / "data" / "dealer_observations_sgcarmart_2024_2026.csv"
     metrics_path = Path(__file__).parent / "data" / "dealer_backtest_metrics.csv"
+    dealer_alignment_path = Path(__file__).parent / "data" / "dealer_package_horizon_alignment.csv"
     dealer_manifest_path = Path(__file__).parent / "data" / "sgcarmart_source_manifest_2024_2026.csv"
     if dataset_path.exists():
         archive = pd.read_csv(dataset_path)
@@ -390,8 +546,19 @@ The SGCarMart corpus uses page-level category summaries, not unverified model/va
 Dealer features are accepted only when source URL, observation time, evidenced availability time, retrieval time and category are present. The collection workflow, checksums and data dictionary are versioned in the repository.
 """
     )
+    if dealer_alignment_path.exists():
+        alignment = pd.read_csv(dealer_alignment_path)
+        st.subheader("Guaranteed-COE package horizon alignment")
+        d1, d2, d3 = st.columns(3)
+        d1.metric("Mapped package observations", f"{len(alignment):,}")
+        d2.metric("Distinct brands", f"{alignment['brand'].nunique():,}")
+        d3.metric("Packages spanning an extended gap", f"{alignment['extended_gap_count'].gt(0).sum():,}")
+        st.caption(
+            "A package begins at the first exercise opening strictly after its evidenced availability time. "
+            "Both bid count and calendar days to the final covered closing date are retained; this mapping is an auditable assumption, not a claim about each dealer's internal bidding plan."
+        )
 
-with tabs[4]:
+with tabs[5]:
     st.subheader("Economic and financial-market variables")
     st.write(
         "The candidate v0.8 model adds Singapore growth, inflation and unemployment; "
@@ -461,8 +628,8 @@ with tabs[4]:
         "prevent use of the current period too early, but they do not recreate true historical data vintages."
     )
 
-with tabs[5]:
-    st.subheader("Methodology & audit trail — v0.11")
+with tabs[6]:
+    st.subheader("Methodology & audit trail — v0.12")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -479,7 +646,7 @@ with tabs[5]:
     with st.expander("1. Purpose, scope and current status", expanded=True):
         st.markdown(
             f"""
-The app studies the next COE bidding exercise separately for **Category A, Category B and Category D**. Its primary model predicts the dollar change from the preceding completed premium. The v0.9 probability layer then classifies the realised change as **Increase** above `+S$1,000`, **Stay** within `±S$1,000` inclusive, or **Decrease** below `−S$1,000`.
+The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental v0.12 layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
 
@@ -492,6 +659,7 @@ This is public-interest statistical analysis, not a bidding recommendation or fi
             pd.DataFrame(
                 [
                     {"Component": "Structural Ridge forecast", "Status": "Primary research model", "Claim": "Retrospective benchmark results disclosed"},
+                    {"Component": "Timing-aware multi-cycle model", "Status": "Experimental", "Claim": "Promoted only at horizons that beat naïve MAE"},
                     {"Component": "Three-way probability layer", "Status": "Experimental", "Claim": "Not prospectively calibrated"},
                     {"Component": "Structural + dealer signals", "Status": "Experimental", "Claim": "No general forecasting edge claimed"},
                     {"Component": "Structural + economy/markets", "Status": "Experimental", "Claim": "Not promoted over structural"},
@@ -582,7 +750,20 @@ The point forecast and highest-probability outcome may differ when the historica
 """
         )
 
-    with st.expander("6. Dealer-signal experiment"):
+    with st.expander("6. Multi-cycle and extended-gap experiment"):
+        st.markdown(
+            """
+The timing-aware layer fits separate direct models for **1, 2, 4 and 6 exercises ahead**. It never feeds an earlier prediction into a later forecast. A historical training example is admitted only after its own future target had completed, preventing overlapping multi-horizon labels from leaking across the forecast origin.
+
+Official LTA opening and closing schedules from 2017–2026 determine close-to-close exposure. The features include next-gap days, quota per week, lagged bids per week, total calendar span and the number of intervals of at least 19 days. Longer gaps are learned effects, not automatic premium uplifts. Cat A/B use a dealer-oriented ±S$2,000 Stay band in this tab; Cat D retains ±S$1,000. The category tabs preserve the original ±S$1,000 comparison.
+
+Only the next announced quota is used. Quotas for later exercises are not treated as known. Horizon-matched naïve benchmarks and negative results remain visible.
+
+At every horizon, paired research comparisons also re-fit the model with the 13-variable economy/markets block and with financing added. For Categories A and B, a separate Ridge correction tests SGCarMart dealer signals using the first upcoming tender's frozen cutoff. Its training residuals are embargoed until their own terminal horizon has completed. These signal variants do not alter the live forecast and are not promoted from a single retrospective result.
+"""
+        )
+
+    with st.expander("7. Dealer-signal experiment"):
         st.markdown(
             """
 The SGCarMart layer reconstructs dated 2024–2026 authorised-dealer price-list signals: advertised package prices and changes, COE rebates, guaranteed-COE terms and bid counts, finance/trade-in/cash incentives, promotion deadlines and roadshows. Brand aggregation uses LTA registrations from the preceding 12 complete months.
@@ -593,7 +774,7 @@ The experiment fits an expanding-window Ridge correction to the already out-of-s
 """
         )
 
-    with st.expander("7. Economy, markets and financing experiment"):
+    with st.expander("8. Economy, markets and financing experiment"):
         st.markdown(
             f"""
 The candidate `{ECONOMIC_MODEL_VERSION}` adds 15 tender-aligned variables: SGD/USD level and change; VIX level and change; US 10-year Treasury yield and change; Brent price and return; Nasdaq Composite level and return; Singapore real-GDP growth, CPI inflation and unemployment; and the MAS three-year new-vehicle hire-purchase rate plus its age in days.
@@ -604,11 +785,12 @@ The 13-variable economy core produced mixed, marginal results. Adding financing 
 """
         )
 
-    with st.expander("8. Leakage controls and historical availability"):
+    with st.expander("9. Leakage controls and historical availability"):
         st.markdown(
             """
 - Premiums, bids, bid pressure, excess demand, momentum and Cat E outcomes are lagged by at least one completed tender.
 - Outer-test outcomes never enter training, inner tuning, interval construction or probability estimation at that origin.
+- Multi-cycle structural and dealer-residual labels remain embargoed until their terminal target exercise has completed.
 - Date-only historical SGCarMart documents are conservatively assigned to 23:59:59 Singapore time on the stated date unless contemporaneous evidence proves an earlier public time.
 - Dealer records store `observed_at`, evidenced `available_at`, later `retrieved_at`, source URL and PDF checksum separately.
 - Daily market observations receive a following-Singapore-day availability time; 21-trading-day changes use observations at least 30 calendar days earlier.
@@ -622,10 +804,10 @@ The 13-variable economy core produced mixed, marginal results. Adding financing 
             for family, rule in {**FEATURE_AVAILABILITY, **ECONOMIC_FEATURE_AVAILABILITY}.items()
         ]
     )
-    with st.expander("9. Feature-by-feature availability rules"):
+    with st.expander("10. Feature-by-feature availability rules"):
         st.dataframe(availability, hide_index=True, width="stretch")
 
-    with st.expander("10. MVP audit findings and version history"):
+    with st.expander("11. MVP audit findings and version history"):
         st.markdown(
             """
 The original MVP audit found that comma-formatted official numbers could be coerced to missing values, recent tenders could therefore disappear, Ridge features were unscaled, month was treated as ordinal rather than cyclical, Cat E and announced supply were absent, and evaluation showed only persistence MAE. The dealer template also lacked sufficient provenance and enforceable historical cutoffs. The original premium and bid-pressure inputs were lagged, so no direct same-tender outcome leakage was found.
@@ -635,15 +817,16 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **Interface/model v0.9:** Increase/Stay/Decrease probability layer, probability benchmarking, complete indicator tooltips and this consolidated methodology/audit narrative.
 - **Data refresh v0.10:** strict final-result ingestion from LTA OneMotoring when the data.gov.sg archive is delayed; provisional closing tables remain excluded.
 - **Data refresh v0.11:** official COE outcomes and paired dealer/economy walk-forward evaluations extended through September 2026 Exercise 2; tender-aligned markets and macro features retrieved again on 29 September 2026.
+- **v0.12:** added direct 1/2/4/6-exercise models, overlapping-label embargoes, official close-to-close gap exposure, category-specific dealer-oriented Stay bands, gap-segment evaluation and guaranteed-package calendar alignment.
 """
         )
 
-    with st.expander("11. Sources, reproducibility and known limitations"):
+    with st.expander("12. Sources, reproducibility and known limitations"):
         st.markdown(
             """
 **Primary sources:** [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) · [LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) · [SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) · [MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) · [SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) · [FRED economic data](https://fred.stlouisfed.org/)
 
-**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; pre-2024 tender timestamps are approximate; and the next-exercise quota currently uses a carry-forward assumption.
+**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; official tender timestamps begin in 2017 rather than October 2015; and the next-exercise quota currently uses a carry-forward assumption while later-horizon quotas are not treated as known.
 
 The repository versions the model code, methodology, source manifests, checksums, tender schedule, feature datasets and back-test outputs. Negative results remain visible. A credible calibration or forecasting-edge claim requires future predictions frozen before bidding and evaluated after the outcomes arrive.
 """

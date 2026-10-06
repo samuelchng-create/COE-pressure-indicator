@@ -1,4 +1,78 @@
-# v0.11 official-result ingestion, probability, dealer and economy methodology
+# v0.12 multi-cycle, tender-timing, probability, dealer and economy methodology
+
+## Direct multi-cycle forecast contract
+
+The experimental v0.12 layer predicts the terminal premium 1, 2, 4 and 6
+completed exercises ahead. A separate direct Ridge model is fitted for every
+category and horizon. Forecasts are not recursively chained. At an origin
+exercise `t`, inputs contain completed outcomes through `t`, the announced
+quota for `t+1`, calendar-known timing and seasonality, and no outcome from
+`t+1` onward. Supply after `t+1` is not represented as known.
+
+Multi-horizon labels overlap, so ordinary expanding-window slicing would leak
+future outcomes. For a test made at origin `t`, a training example is eligible
+only when its own target exercise had completed by `t`. Ridge tuning uses only
+that embargoed training set. Conformal intervals and empirical direction
+probabilities use earlier out-of-sample errors from the same category and
+horizon.
+
+Categories A and B use a dealer-oriented Stay definition of ±S$2,000 in this
+tab; Category D retains ±S$1,000 because a ±S$2,000 motorcycle band classifies
+almost every historical outcome as Stay. The original one-cycle category tabs
+retain their ±S$1,000 definition for comparability. Exact dollar changes are
+shown in both views.
+
+## Tender-calendar and extended-demand exposure
+
+Official LTA annual schedules provide opening and closing timestamps from 2017
+through 2026. The 2017 source is the revised calendar issued after the February
+policy postponement. Close-to-close days, weeks, intervals of at least 19 days,
+quota per week and lagged bids per week enter the experimental timing-aware
+model. Calendar spans are computed over the actual sequence of completed
+exercises, so the April–June 2020 bidding suspension is treated as a long gap
+rather than as ordinary planned tenders.
+
+The analysis window still begins in October 2015. Historical multi-horizon test
+origins begin only after the 60-example training requirement, by which point
+official calendar coverage is available. No 2015–2016 timestamp is silently
+reconstructed.
+
+Normal paths and paths containing at least one extended interval are reported
+separately. A longer interval is an exposure feature, not an assumed fixed
+premium uplift; the coefficient is estimated inside each historical training
+window.
+
+## Dealer-package horizon alignment
+
+For observations with an explicit guaranteed bid count, coverage begins at the
+first exercise opening strictly after the document's evidenced availability
+timestamp. The audit dataset stores the first and last covered tender, calendar
+days to the final closing date and intervening extended-gap count. This is a
+conservative reproducible alignment assumption, not a claim about a dealer's
+unobserved internal bidding plan. Dealer uplift remains separately experimental
+because only the 2024–2026 reconstructed archive is available.
+
+For each 1/2/4/6-exercise test, dealer variables are frozen at the official
+opening cutoff of the first upcoming exercise. A Ridge model predicts the
+direct structural forecast's residual. A historical residual becomes eligible
+for training only when its own terminal target exercise had completed by the
+new forecast origin. This second embargo is necessary because simply ordering
+dealer rows by first upcoming tender would leak unfinished multi-cycle labels.
+The paired sample contains 53/51/47/43 forecasts at horizons 1/2/4/6. Only Cat
+A at one exercise improves MAE (+3.2%); Cat A at 2/4/6 and Cat B at all four
+horizons worsen MAE. No live dealer adjustment is therefore published.
+
+## Multi-horizon economy, markets and financing comparison
+
+The 13-variable economy/markets block and the 15-variable block that also
+contains the MAS vehicle hire-purchase rate and its age are re-fitted directly
+at every category/horizon pair. Each comparison uses the same origins as its
+structural model and the same terminal-label embargo. The economy/markets block
+modestly improves Cat A and Cat B MAE at all four horizons (from +0.1% to
++4.3%) but worsens Cat D. Adding the financing proxy worsens eleven of twelve
+comparisons and is effectively flat for Cat B at two exercises (+0.04%). These
+are current-vintage macro sensitivity tests, not prospectively frozen model
+upgrades, so neither candidate changes the live structural forecast.
 
 ## v0.10 official final-results bridge
 
