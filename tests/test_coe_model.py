@@ -123,3 +123,18 @@ def test_next_tender_forecast_has_three_probabilities_and_future_tender_id():
     assert forecast.predicted_direction in {"Decrease", "Stay", "Increase"}
     assert set(forecast.probabilities) == {"Decrease", "Stay", "Increase"}
     assert sum(forecast.probabilities.values()) == pytest.approx(1.0)
+
+    announced = forecast_next_tender(
+        data,
+        "Category A",
+        backtest,
+        announced_tender_id="2023-10-1",
+        announced_quotas={
+            "Category A": 1_000,
+            "Category B": 900,
+            "Category C": 500,
+            "Category D": 600,
+            "Category E": 300,
+        },
+    )
+    assert announced.quota_assumption == "Official LTA announced category and Cat E quotas"

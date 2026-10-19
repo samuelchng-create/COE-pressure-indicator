@@ -74,32 +74,32 @@ Feature definitions and candidate models must be frozen before examining the
 final holdout period. If uplift is absent or unstable, publish that negative
 result and do not release calibrated weights or probabilities.
 
-## v0.8 twenty-brand-group rerun (collection cutoff 2 September 2026)
+## v0.13 twenty-brand-group refresh (source dates through 16 October 2026)
 
-- 1,487 dated PDFs from 23 SGCarMart source marques representing the 20
-  requested groups were retrieved without a failed request; 3,774 PDF page
-  summaries remain in the audit table. The source dates run through 1 September
+- 1,562 dated PDFs from 23 SGCarMart source marques representing the 20
+  requested groups were retrieved without a failed request; 4,012 PDF page
+  summaries remain in the audit table. The source dates run through 16 October
   2026.
-- 1,124 observations passed the explicit Cat A/B label and advertised-price
-  rules: 673 Cat A and 451 Cat B rows across BYD, Toyota/Lexus,
+- 1,182 observations passed the explicit Cat A/B label and advertised-price
+  rules: 709 Cat A and 473 Cat B rows across BYD, Toyota/Lexus,
   Chery/Omoda/Jaecoo, GAC/Aion, Honda, Hyundai, Kia, Mazda, Nissan, Suzuki and
   Zeekr. The other requested groups remain context-only because their pages did
   not satisfy the same deterministic eligibility rules.
 - Toyota and Lexus retain separate source attribution but use the consolidated
   LTA Toyota registration series; Omoda and Jaecoo map to Chery; Aion maps to
-  GAC; and MG maps to LTA's `M.G.` label. The latest official LTA release was
-  published in August 2026 and its CSV runs through July 2026.
-- 135 observations contain a valid explicitly labelled advertised finance
+  GAC; and MG maps to LTA's `M.G.` label. The current market-share weights use
+  official LTA registrations through August 2026.
+- 138 observations contain a valid explicitly labelled advertised finance
   rate, all from Honda and ranging from 2.58% to 2.78%. Broad percentage text
   is not parsed as interest, and no motorcycle rate is inferred.
-- The paired dealer test contains 51 one-tender-ahead forecasts per category.
-- Cat A structural-plus-dealer MAE was S$3,284 versus S$3,327 structural-only,
-  a 1.27% improvement. RMSE improved only 0.03%; direction accuracy was
-  unchanged at 68.6%. The combined 80% interval covered 92.3% and remained
+- The paired dealer test contains 54 one-tender-ahead forecasts per category.
+- Cat A structural-plus-dealer MAE was S$3,216 versus S$3,252 structural-only,
+  a 1.09% improvement. RMSE improved 0.34%; direction accuracy was 70.4%
+  versus 68.5%. The combined 80% interval covered 92.9% and remained
   materially wider.
-- Cat B structural-plus-dealer MAE was S$4,814 versus S$4,348 structural-only,
-  a 10.71% deterioration. RMSE deteriorated 14.22%; direction accuracy was
-  47.1% versus 51.0%. The combined 80% interval covered 82.1% and was wider.
+- Cat B structural-plus-dealer MAE was S$4,703 versus S$4,227 structural-only,
+  an 11.25% deterioration. RMSE deteriorated 14.04%; direction accuracy was
+  48.1% versus 51.9%. The combined 80% interval covered 83.3% and was wider.
 
 The category results are mixed and the Cat A improvement is small,
 retrospectively reconstructed and accompanied by a much wider interval. This

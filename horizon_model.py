@@ -343,6 +343,8 @@ class HorizonForecast:
     calendar_days: float
     extended_gap_count: int
     selected_alpha: float
+    quota_assumption: str
+    calendar_assumption: str
 
 
 def _future_tender_sequence(data: pd.DataFrame, count: int) -> list[tuple[pd.Timestamp, int, str]]:
@@ -366,6 +368,8 @@ def forecast_horizon(
     schedule: pd.DataFrame,
     horizon: int,
     backtest: pd.DataFrame,
+    announced_tender_id: str | None = None,
+    announced_quotas: dict[str, int] | None = None,
     alphas: tuple[float, ...] = (0.1, 1.0, 10.0, 100.0),
     inner_splits: int = 4,
 ) -> HorizonForecast:
@@ -381,12 +385,20 @@ def forecast_horizon(
     latest_rows = ordered[ordered["tender_id"].eq(latest_id)].copy()
     future = _future_tender_sequence(ordered, max(HORIZONS))
     synthetic_rows = []
+    uses_announced_quota = False
     for month, bidding_no, tender_id in future:
         synthetic = latest_rows.copy()
         synthetic["month"] = month
         synthetic["bidding_no"] = bidding_no
         synthetic["tender_id"] = tender_id
         synthetic["display_date"] = month + pd.to_timedelta((bidding_no - 1) * 14, unit="D")
+        if (
+            tender_id == announced_tender_id
+            and announced_quotas is not None
+            and set(synthetic["vehicle_class"]).issubset(announced_quotas)
+        ):
+            synthetic["quota"] = synthetic["vehicle_class"].map(announced_quotas)
+            uses_announced_quota = True
         synthetic_rows.append(synthetic)
     augmented = pd.concat([ordered, *synthetic_rows], ignore_index=True)
     next_id = future[0][2]
@@ -397,12 +409,20 @@ def forecast_horizon(
     calendar = prepare_tender_calendar(schedule)
     timing = calendar.set_index("tender_id")
     origin_close = timing.at[latest_id, "exercise_end_at"]
-    next_close = timing.at[next_id, "exercise_end_at"]
-    target_close = timing.at[target_id, "exercise_end_at"]
+    path_ids = [entry[2] for entry in future[:horizon]]
+    path_closes: list[pd.Timestamp] = [origin_close]
+    projected_intervals = 0
+    for path_id in path_ids:
+        if path_id in timing.index:
+            close = timing.at[path_id, "exercise_end_at"]
+        else:
+            close = path_closes[-1] + pd.Timedelta(days=14)
+            projected_intervals += 1
+        path_closes.append(close)
+    next_close = path_closes[1]
+    target_close = path_closes[-1]
     next_gap_days = float((next_close - origin_close).total_seconds() / 86_400)
     horizon_days = float((target_close - origin_close).total_seconds() / 86_400)
-    path_ids = [entry[2] for entry in future[:horizon]]
-    path_closes = [origin_close, *[timing.at[item, "exercise_end_at"] for item in path_ids]]
     extended_count = int(
         sum((later - earlier).total_seconds() / 86_400 >= 19 for earlier, later in zip(path_closes, path_closes[1:]))
     )
@@ -443,4 +463,14 @@ def forecast_horizon(
         calendar_days=horizon_days,
         extended_gap_count=extended_count,
         selected_alpha=alpha,
+        quota_assumption=(
+            "Official LTA announced next-exercise quotas"
+            if uses_announced_quota
+            else "Last completed next-exercise quotas carried forward"
+        ),
+        calendar_assumption=(
+            "Official LTA closing schedule"
+            if projected_intervals == 0
+            else f"Official schedule plus {projected_intervals} projected 14-day interval(s)"
+        ),
     )

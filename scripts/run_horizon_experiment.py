@@ -1,4 +1,4 @@
-"""Build v0.12 direct multi-horizon forecasts and persisted audit outputs."""
+"""Build v0.13 direct multi-horizon forecasts and persisted audit outputs."""
 
 import json
 from pathlib import Path
@@ -18,12 +18,14 @@ from horizon_model import (
     summarize_horizon,
     walk_forward_horizon_backtest,
 )
+from official_results import parse_one_motoring_upcoming_quotas
 from tender_timing import load_tender_schedule
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DATASET = "d_69b3380ad7e51aff3a7dcc84eba52b8a"
 URL = f"https://data.gov.sg/api/action/datastore_search?resource_id={DATASET}&limit=5000"
+ONEMOTORING_URL = "https://onemotoring.lta.gov.sg/content/onemotoring/home/buying/coe-open-bidding.html"
 
 
 def main() -> None:
@@ -34,6 +36,14 @@ def main() -> None:
         text=True,
     )
     data = prepare_coe_data(json.loads(response.stdout)["result"]["records"])
+    upcoming_response = subprocess.run(
+        ["curl", "-fsSL", "--retry", "3", "--retry-delay", "2", ONEMOTORING_URL],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    upcoming = parse_one_motoring_upcoming_quotas(upcoming_response.stdout)
+    announced_tender_id, announced_quotas = upcoming if upcoming is not None else (None, {})
     schedule = load_tender_schedule(ROOT / "data" / "tender_schedule_2017_2026.csv")
     predictions = []
     metrics = []
@@ -66,7 +76,15 @@ def main() -> None:
             summary["probability_n"] = len(probability_rows)
             summary["Brier"] = float(probability_rows["brier_score"].mean())
             metrics.append(summary)
-            live = forecast_horizon(data, category, schedule, horizon, backtest)
+            live = forecast_horizon(
+                data,
+                category,
+                schedule,
+                horizon,
+                backtest,
+                announced_tender_id=announced_tender_id,
+                announced_quotas=announced_quotas,
+            )
             forecasts.append(
                 {
                     "category": live.category,
@@ -83,6 +101,8 @@ def main() -> None:
                     "calendar_days": live.calendar_days,
                     "extended_gap_count": live.extended_gap_count,
                     "selected_alpha": live.selected_alpha,
+                    "quota_assumption": live.quota_assumption,
+                    "calendar_assumption": live.calendar_assumption,
                 }
             )
             structural = summary[summary.model.eq("structural")].iloc[0]

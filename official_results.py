@@ -33,6 +33,7 @@ class _TableParser(HTMLParser):
         self._table: list[list[str]] | None = None
         self._row: list[str] | None = None
         self._cell: list[str] | None = None
+        self.text: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         del attrs
@@ -46,6 +47,9 @@ class _TableParser(HTMLParser):
             self._cell = []
 
     def handle_data(self, data: str) -> None:
+        cleaned = " ".join(data.split())
+        if cleaned:
+            self.text.append(cleaned)
         if self._heading is not None:
             self._heading.append(data)
         if self._cell is not None:
@@ -77,7 +81,7 @@ def parse_one_motoring_final_results(html: str) -> list[dict[str, str]]:
     parser = _TableParser()
     parser.feed(html)
     heading_pattern = re.compile(
-        r"^Results for ([A-Z]+) (\d{4}) (1st|2nd) Open Bidding Exercise$",
+        r"^(?:Final )?Results for ([A-Z]+) (\d{4}) (1st|2nd) Open Bidding Exercise$",
         re.IGNORECASE,
     )
     heading_match = next(
@@ -127,3 +131,66 @@ def parse_one_motoring_final_results(html: str) -> list[dict[str, str]]:
         }
         for category in "ABCDE"
     ]
+
+
+def parse_one_motoring_upcoming_quotas(html: str) -> tuple[str, dict[str, int]] | None:
+    """Return a strictly identified upcoming/active tender and announced quotas.
+
+    During bidding, only the quota column is admitted. Provisional prices and
+    bid counts from the live status table are deliberately ignored.
+    """
+    parser = _TableParser()
+    parser.feed(html)
+    text = " ".join(parser.text)
+    match = re.search(
+        r"Next COE Open Bidding Exercise Starts on (\d{1,2})/(\d{1,2})/(\d{4})",
+        text,
+        re.IGNORECASE,
+    )
+    active = False
+    if match is None:
+        match = re.search(
+            r"Bidding status as at (\d{1,2})/(\d{1,2})/(\d{4})",
+            text,
+            re.IGNORECASE,
+        )
+        active = match is not None
+    if match is None:
+        return None
+    day, month, year = map(int, match.groups())
+    bidding_no = 1 if day <= 15 else 2
+    tender_id = f"{year:04d}-{month:02d}-{bidding_no}"
+    if active:
+        quota_table = next(
+            (
+                table
+                for table in parser.tables
+                if table
+                and table[0][-3:] == ["Current COE Price ($)", "Quota", "Bids Received"]
+            ),
+            None,
+        )
+        quota_position = -2
+    else:
+        quota_table = next(
+            (
+                table
+                for table in parser.tables
+                if table
+                and table[0][-1:] == ["Quota"]
+                and "QP($)" not in table[0]
+            ),
+            None,
+        )
+        quota_position = -1
+    if quota_table is None:
+        raise ValueError("Upcoming OneMotoring quota table is missing")
+    quotas = {
+        f"Category {row[0]}": _integer(row[quota_position])
+        for row in quota_table[1:]
+        if len(row) >= 2 and row[0] in set("ABCDE")
+    }
+    expected = {f"Category {category}" for category in "ABCDE"}
+    if set(quotas) != expected:
+        raise ValueError("Upcoming OneMotoring quota table does not contain Categories A–E exactly once")
+    return tender_id, quotas

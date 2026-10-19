@@ -14,7 +14,13 @@ def main() -> None:
     args = parser.parse_args()
 
     raw = args.html.read_text(encoding="utf-8")
-    marker = 'adDealerList\\":'
+    # SGCarMart renamed this Next.js payload field from ``adDealerList`` to
+    # ``adList`` in October 2026. Accept both names so historical snapshots and
+    # current refreshes remain reproducible.
+    markers = ('adDealerList\\":', 'adList\\":')
+    marker = next((candidate for candidate in markers if candidate in raw), None)
+    if marker is None:
+        raise ValueError("authorised-dealer list array not found")
     start = raw.index(marker) + len(marker)
     if raw[start] != "[":
         raise ValueError("adDealerList array not found")

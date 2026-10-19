@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.12 multi-cycle and tender-timing model
+# Singapore COE Pressure Indicator — v0.13 October 2026 refresh
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -7,6 +7,18 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is prospectively calibrated. Negative benchmark results remain visible.
+
+## v0.13 current refresh
+
+- Extends official completed outcomes through October 2026 Exercise 1: Cat A
+  S$130,001, Cat B S$130,100 and Cat D S$11,012.
+- Uses LTA's announced October Exercise 2 quotas in the live forecast instead
+  of carrying the previous tender's supply forward. Live bid counts and
+  provisional prices remain excluded.
+- Refreshes the SGCarMart archive through 16 October 2026 and the economy,
+  markets and vehicle-financing feature set through the current tender cutoff.
+- Explicitly labels the one six-exercise calendar interval extending into 2027
+  as projected because the bundled official schedule currently ends in 2026.
 
 ## v0.12 direct multi-cycle outlook
 
@@ -21,7 +33,7 @@ forecast edge is prospectively calibrated. Negative benchmark results remain vis
   per week and extended-gap counts to the experimental horizon model.
 - Uses a dealer-oriented ±S$2,000 Stay band for Categories A and B while
   retaining ±S$1,000 for Category D. Exact dollar forecasts remain visible.
-- Maps 560 dated guaranteed-COE package observations to both their stated bid
+- Maps 578 dated guaranteed-COE package observations to both their stated bid
   count and the official calendar date of the last covered exercise.
 - Re-runs paired dealer, economy/markets and vehicle-financing candidates at
   every horizon. Dealer residual labels receive the same terminal-target
@@ -32,16 +44,17 @@ forecast edge is prospectively calibrated. Negative benchmark results remain vis
   research candidates.
 
 The timing-aware model beats the best naïve MAE for Cat A at one exercise
-(+7.1%) and for Cat B at one, two and four exercises (+5.0%, +2.9% and +1.6%).
-It does not beat the best naïve MAE for the remaining category/horizon pairs,
-so the existing one-cycle structural model remains the primary published model.
+(+7.4%), Cat B at one, two and four exercises (+5.4%, +3.2% and +1.5%), and
+Cat D at one and two exercises by only +0.2% and +0.4%. It trails the benchmark
+at the other horizons, so the existing one-cycle structural model remains the
+primary published model.
 
-The 13-variable economy/markets candidate improves structural MAE modestly for
-Cat A at 1/2/4/6 exercises (+0.2%, +1.3%, +3.9%, +4.3%) and Cat B (+0.7%,
-+1.6%, +0.1%, +1.3%), but worsens Cat D at every horizon. Adding the carried
-vehicle-financing proxy is neutral only for Cat B at two exercises (+0.04%) and
-worsens the other comparisons. On the smaller reconstructed 2024–2026 sample,
-dealer signals improve only Cat A at one exercise (+3.2%); the other seven
+The 13-variable economy/markets candidate improves structural MAE for Cat A at
+2/4/6 exercises (+1.0%, +4.1%, +4.3%) and Cat B at all horizons (+0.3%, +1.2%,
++0.1%, +1.4%), but is slightly worse for Cat A at one exercise and worse for
+Cat D throughout. Adding the vehicle-financing proxy worsens all 12 comparisons.
+On the smaller reconstructed 2024–2026 sample, dealer signals improve only Cat
+A at one exercise (+2.9%); the other seven
 category/horizon tests worsen MAE. These retrospective candidates do not alter
 the live structural forecast and are not presented as calibrated edges.
 
@@ -75,10 +88,10 @@ avoid mixing materially different policy regimes into the reported results.
 - Treats the probabilities as experimental even when the retrospective Brier
   score improves. Prospective frozen forecasts are still required before any
   calibration claim.
-- Carries the last completed category and Cat E quotas into the upcoming row as
-  a disclosed neutral supply assumption until a timestamped upcoming quota
-  announcement is added. The structural point forecast and the most probable
-  outcome can differ when the historical residual distribution is asymmetric.
+- Uses official announced category and Cat E quotas when OneMotoring identifies
+  the exact expected tender, otherwise visibly falls back to the last completed
+  quotas. The structural point forecast and the most probable outcome can
+  differ when the historical residual distribution is asymmetric.
 - Adds plain-language hover help to every headline dashboard indicator.
 
 ## v0.8 SGCarMart dealer refresh
@@ -107,12 +120,12 @@ avoid mixing materially different policy regimes into the reported results.
 - Excludes Category D because SGCarMart's car price-list archive is not a
   motorcycle dealer archive.
 
-The refreshed archive contains 1,487 source PDFs, 3,774 auditable page rows and
-1,124 model-eligible observations from 11 grouped brands. It contains 135 explicit
+The refreshed archive contains 1,562 source PDFs, 4,012 auditable page rows and
+1,182 model-eligible observations from 11 grouped brands. It contains 138 explicit
 advertised car-finance rates, all from Honda documents and ranging from 2.58%
 to 2.78%; this narrow coverage is disclosed. The latest SGCarMart document is
-dated 1 September 2026. Over 53 paired forecasts per category, the v0.8 dealer
-variant improved Cat A MAE by 1.51% but worsened Cat B MAE by 10.74%. The small
+dated 16 October 2026. Over 54 paired forecasts per category, the v0.8 dealer
+variant improved Cat A MAE by 1.09% but worsened Cat B MAE by 11.25%. The small
 retrospective Cat A result is not treated as a validated edge, and no calibrated
 Dealer Pressure Index or probabilities are published.
 
@@ -132,12 +145,12 @@ Dealer Pressure Index or probabilities are published.
 - Uses exact official LTA tender-opening cutoffs from 2024 onward. Earlier
   tenders retain the ordered first/second-exercise date approximation because
   the results table does not contain historical opening timestamps.
-- Runs a three-way paired expanding-window comparison at the same 195 forecast
+- Runs a three-way paired expanding-window comparison at the same 196 forecast
   origins: structural, structural plus the 13-variable economy block, and that
   block plus financing. Relative to the economy block, financing worsened MAE
-  by 0.33% for Cat A, 1.20% for Cat B and 1.02% for Cat D. Relative to the
-  structural model, the 15-variable version worsened MAE by 0.76%, 0.87% and
-  5.04%, respectively. It is not promoted over the structural model.
+  by 0.36% for Cat A, 1.21% for Cat B and 1.06% for Cat D. Relative to the
+  structural model, the 15-variable version worsened MAE by 1.10%, 1.36% and
+  5.32%, respectively. It is not promoted over the structural model.
 - The official rate currently ends in April 2023. The explicit staleness
   feature prevents a carried-forward value from being mistaken for a fresh
   observation. No unsupported motorcycle-specific history is imputed.
@@ -160,9 +173,9 @@ Dealer Pressure Index or probabilities are published.
 - Builds 80% prequential conformal intervals from earlier out-of-sample errors
   only.
 
-Across 195 post-policy forecasts, structural MAE is S$2,842 for Cat A, S$3,923
-for Cat B and S$431 for Cat D. It beats the best naïve MAE by about 5.4% for Cat A
-and 1.2% for Cat B, but trails it by about 4.7% for Cat D.
+Across 196 post-policy forecasts, structural MAE is S$2,830 for Cat A, S$3,906
+for Cat B and S$434 for Cat D. It beats the best naïve MAE by about 5.7% for Cat A
+and 1.6% for Cat B, but trails it by about 4.5% for Cat D.
 
 See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and
 [docs/DEALER_SIGNALS.md](docs/DEALER_SIGNALS.md), plus

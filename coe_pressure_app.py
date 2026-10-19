@@ -25,14 +25,14 @@ from economic_features import (
     ECONOMIC_MODEL_VERSION,
     validate_economic_features,
 )
-from official_results import parse_one_motoring_final_results
+from official_results import parse_one_motoring_final_results, parse_one_motoring_upcoming_quotas
 from tender_timing import exercise_status, load_tender_schedule
 
 
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.12 timing-aware 1/2/4/6-cycle outlook • "
+    f"v0.13 October 2026 data refresh + timing-aware 1/2/4/6-cycle outlook • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -122,25 +122,37 @@ ONEMOTORING_RESULTS_URL = (
 
 
 @st.cache_data(ttl=300)
-def load_coe(cache_version: str) -> tuple[pd.DataFrame, list[str]]:
+def load_coe(cache_version: str) -> tuple[pd.DataFrame, list[str], str | None, dict[str, int]]:
     del cache_version  # Included in the cache key to invalidate model-regime changes.
     response = requests.get(URL, timeout=20)
     response.raise_for_status()
     records = list(response.json()["result"]["records"])
     direct_tenders: list[str] = []
+    upcoming_tender_id: str | None = None
+    upcoming_quotas: dict[str, int] = {}
     try:
         live_response = requests.get(ONEMOTORING_RESULTS_URL, timeout=20)
         live_response.raise_for_status()
-        final_records = parse_one_motoring_final_results(live_response.text)
-    except (requests.RequestException, ValueError):
+    except requests.RequestException:
         final_records = []
+    else:
+        try:
+            final_records = parse_one_motoring_final_results(live_response.text)
+        except ValueError:
+            final_records = []
+        try:
+            upcoming = parse_one_motoring_upcoming_quotas(live_response.text)
+        except ValueError:
+            upcoming = None
+        if upcoming is not None:
+            upcoming_tender_id, upcoming_quotas = upcoming
     existing = {(row["month"], str(row["bidding_no"]), row["vehicle_class"]) for row in records}
     for row in final_records:
         key = (row["month"], row["bidding_no"], row["vehicle_class"])
         if key not in existing:
             records.append(row)
             direct_tenders.append(f"{row['month']}-{row['bidding_no']}")
-    return prepare_coe_data(records), sorted(set(direct_tenders))
+    return prepare_coe_data(records), sorted(set(direct_tenders)), upcoming_tender_id, upcoming_quotas
 
 
 @st.cache_data(show_spinner=False)
@@ -150,7 +162,7 @@ def run_backtest(data: pd.DataFrame, category: str, cache_version: str) -> pd.Da
 
 
 try:
-    df, direct_result_tenders = load_coe(MODEL_VERSION)
+    df, direct_result_tenders, announced_tender_id, announced_quotas = load_coe(MODEL_VERSION)
 except Exception as error:
     st.error(f"Could not load or validate the official data.gov.sg dataset: {error}")
     st.stop()
@@ -203,7 +215,13 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         best_naive = summary.metrics.loc[summary.best_naive]
 
         direction_backtest = prequential_direction_probabilities(backtest)
-        next_forecast = forecast_next_tender(df, category, backtest)
+        next_forecast = forecast_next_tender(
+            df,
+            category,
+            backtest,
+            announced_tender_id=announced_tender_id,
+            announced_quotas=announced_quotas,
+        )
         st.subheader("Next bidding exercise: experimental three-way outlook")
         timing = exercise_status(tender_schedule, next_forecast.tender_id)
         if timing is not None:
@@ -326,9 +344,14 @@ with tabs[3]:
                 f"This horizon contains {int(forecast.extended_gap_count)} extended interval(s) of at least 19 days. "
                 "The timing-aware model includes the longer demand-accumulation exposure."
             )
+        if "projected" in str(forecast.calendar_assumption).lower():
+            st.info(
+                f"Calendar input: {forecast.calendar_assumption}. The exact 2027 LTA tender schedule is not yet bundled, so the projected interval is not presented as official."
+            )
         st.caption(
             f"{h_category} uses a dealer-oriented Stay band of ±S${band:,.0f}. The exact dollar forecast remains visible. "
-            "Only the next announced quota is used; later-horizon supply is not treated as known."
+            f"Supply input: {forecast.quota_assumption.lower()}. Calendar input: {forecast.calendar_assumption.lower()}. "
+            "Later-horizon supply is not treated as known."
         )
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("Back-tests", f"{int(structural.n):,}")
@@ -629,7 +652,7 @@ with tabs[5]:
     )
 
 with tabs[6]:
-    st.subheader("Methodology & audit trail — v0.12")
+    st.subheader("Methodology & audit trail — v0.13")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -646,7 +669,7 @@ with tabs[6]:
     with st.expander("1. Purpose, scope and current status", expanded=True):
         st.markdown(
             f"""
-The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental v0.12 layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration.
+The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.13 refreshes all data streams and uses the official announced quota for the immediately upcoming exercise when the tender identity matches exactly.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
 
@@ -708,7 +731,7 @@ This is public-interest statistical analysis, not a bidding recommendation or fi
         st.markdown(
             "Dealer coverage comprises **20 requested brand groups represented by 23 source marques**. "
             "Only 11 groups currently have observations that pass the strict model-eligibility rules. "
-            "The 135 explicitly advertised dealer finance rates are all from Honda material, so they are not treated as market-wide."
+            "The 138 explicitly advertised dealer finance rates are all from Honda material, so they are not treated as market-wide."
         )
 
     with st.expander("3. Structural forecasting model"):
@@ -720,7 +743,7 @@ This is public-interest statistical analysis, not a bidding recommendation or fi
 
 **Estimator.** A standardized Ridge regression. At every forecast origin, the regularization strength is selected again using time-ordered inner validation folds contained entirely inside that origin's training history.
 
-**Supply convention.** Historical back-tests treat target-tender category and Cat E quotas as announced before bidding. For the live next-exercise forecast, the last completed quotas are carried forward until a separately timestamped upcoming announcement is ingested. This is a disclosed neutral assumption, not observed future supply.
+**Supply convention.** Historical back-tests treat target-tender category and Cat E quotas as announced before bidding. The live forecast uses LTA's announced next-exercise quotas only when OneMotoring identifies the expected tender; otherwise it visibly falls back to the last completed quotas. Provisional prices and live bid counts are never admitted.
 """
         )
 
@@ -794,7 +817,7 @@ The 13-variable economy core produced mixed, marginal results. Adding financing 
 - Date-only historical SGCarMart documents are conservatively assigned to 23:59:59 Singapore time on the stated date unless contemporaneous evidence proves an earlier public time.
 - Dealer records store `observed_at`, evidenced `available_at`, later `retrieved_at`, source URL and PDF checksum separately.
 - Daily market observations receive a following-Singapore-day availability time; 21-trading-day changes use observations at least 30 calendar days earlier.
-- Current-vintage macro revisions, carried-forward financing rates and live-quota assumptions are disclosed rather than silently treated as contemporaneous data.
+- Current-vintage macro revisions, carried-forward financing rates and announced-or-fallback live-quota assumptions are disclosed rather than silently treated as contemporaneous data.
 """
         )
 
@@ -818,6 +841,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **Data refresh v0.10:** strict final-result ingestion from LTA OneMotoring when the data.gov.sg archive is delayed; provisional closing tables remain excluded.
 - **Data refresh v0.11:** official COE outcomes and paired dealer/economy walk-forward evaluations extended through September 2026 Exercise 2; tender-aligned markets and macro features retrieved again on 29 September 2026.
 - **v0.12:** added direct 1/2/4/6-exercise models, overlapping-label embargoes, official close-to-close gap exposure, category-specific dealer-oriented Stay bands, gap-segment evaluation and guaranteed-package calendar alignment.
+- **v0.13:** refreshed official outcomes through October 2026 Exercise 1, dealer documents through 16 October, market/macro cutoffs and all paired tests; added strict ingestion of announced next-exercise quotas and explicit 2027 calendar projection disclosure.
 """
         )
 
@@ -826,7 +850,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
             """
 **Primary sources:** [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) · [LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) · [SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) · [MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) · [SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) · [FRED economic data](https://fred.stlouisfed.org/)
 
-**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; official tender timestamps begin in 2017 rather than October 2015; and the next-exercise quota currently uses a carry-forward assumption while later-horizon quotas are not treated as known.
+**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; official tender timestamps begin in 2017 rather than October 2015; later-horizon quotas are not treated as known; and the six-exercise live view currently projects one 2027 interval at 14 days until LTA publishes a schedule covering it.
 
 The repository versions the model code, methodology, source manifests, checksums, tender schedule, feature datasets and back-test outputs. Negative results remain visible. A credible calibration or forecasting-edge claim requires future predictions frozen before bidding and evaluated after the outcomes arrive.
 """

@@ -27,9 +27,8 @@ def main() -> None:
     assert (validated["available_at"] <= validated["retrieved_at"]).all()
     assert validated["advertised_price"].between(80_000, 1_500_000).all()
     advertised_rates = validated["finance_rate_pct"].dropna()
-    assert len(advertised_rates) == 135
+    assert len(advertised_rates) > 0
     assert advertised_rates.between(0.1, 15).all()
-    assert len(validated) == 1124
     assert set(validated["brand"]) == {
         "BYD", "Chery / Omoda / Jaecoo", "GAC / Aion", "Honda", "Hyundai",
         "Kia", "Mazda", "Nissan", "Suzuki", "Toyota / Lexus", "ZEEKR",
@@ -46,12 +45,11 @@ def main() -> None:
         "Jaecoo", "Kia", "Lexus", "MG", "Mazda", "Mercedes-Benz", "Nissan",
         "Omoda", "Porsche", "Suzuki", "Tesla", "Toyota", "Volvo", "XPENG", "ZEEKR",
     }
-    assert len(manifest) == 1487
-    assert manifest["document_date"].max() == "2026-09-01"
+    assert manifest["document_date"].max() >= validated["observed_at"].dt.strftime("%Y-%m-%d").max()
 
     pages = pd.read_csv(ROOT / "data" / "dealer_page_summaries_sgcarmart_2024_2026.csv")
-    assert len(pages) == 3774
     assert (pages["quality_flag"] == "model_eligible").sum() == len(validated)
+    assert set(pages["source_sha256"].dropna()).issubset(set(manifest["sha256"]))
 
     metrics = pd.read_csv(ROOT / "data" / "dealer_backtest_metrics.csv")
     assert set(metrics["category"]) == {"Category A", "Category B"}

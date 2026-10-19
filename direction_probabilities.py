@@ -108,6 +108,8 @@ def forecast_next_tender(
     data: pd.DataFrame,
     category: str,
     backtest: pd.DataFrame,
+    announced_tender_id: str | None = None,
+    announced_quotas: dict[str, int] | None = None,
     alphas: tuple[float, ...] = (0.1, 1.0, 10.0, 100.0),
     inner_splits: int = 4,
 ) -> NextTenderForecast:
@@ -130,6 +132,13 @@ def forecast_next_tender(
     synthetic["bidding_no"] = next_bidding_no
     synthetic["tender_id"] = next_tender_id
     synthetic["display_date"] = next_month + pd.to_timedelta((next_bidding_no - 1) * 14, unit="D")
+    uses_announced_quota = (
+        announced_tender_id == next_tender_id
+        and announced_quotas is not None
+        and set(latest_rows["vehicle_class"]).issubset(announced_quotas)
+    )
+    if uses_announced_quota:
+        synthetic["quota"] = synthetic["vehicle_class"].map(announced_quotas)
     augmented = pd.concat([ordered, synthetic], ignore_index=True)
     frame = build_feature_frame(augmented, category)
     test = frame[frame["tender_id"].eq(next_tender_id)]
@@ -156,5 +165,9 @@ def forecast_next_tender(
         probabilities=probabilities,
         selected_alpha=alpha,
         calibration_observations=len(residuals),
-        quota_assumption="Last completed category and Cat E quotas carried forward",
+        quota_assumption=(
+            "Official LTA announced category and Cat E quotas"
+            if uses_announced_quota
+            else "Last completed category and Cat E quotas carried forward"
+        ),
     )
