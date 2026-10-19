@@ -1,4 +1,20 @@
-# v0.13 refreshed multi-cycle, tender-timing, probability, dealer and economy methodology
+# v0.14 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+
+## v0.14 October 2026 consultation scenarios
+
+The consultation tab transcribes LTA's indicative three-band and five-band OMV
+feebate structures and applies them to a disclosed quota-weighted Category A/B
+price proxy. Historical proxy values use only completed tender premiums and
+quotas from the common October 2015 analysis window. The next-exercise planning
+proxy quota-weights the existing separate Cat A/B forecasts with the official
+announced quotas when the tender identity matches.
+
+This is not a merged-auction model. Aggregate LTA results do not disclose
+individual bid values, so the merged order book, demand substitution and market
+clearing price are not identified. The counterfactual therefore separates the
+mechanical feebate effects from the unknown auction equilibrium and excludes
+Category E redesign, renewal transitions and dealer absorption. Full assumptions
+and metrics are in `docs/COE_CONSULTATION_SCENARIOS.md`.
 
 ## Direct multi-cycle forecast contract
 

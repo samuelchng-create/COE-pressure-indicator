@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.13 October 2026 refresh
+# Singapore COE Pressure Indicator — v0.14 consultation scenarios
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -8,7 +8,21 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is prospectively calibrated. Negative benchmark results remain visible.
 
-## v0.13 current refresh
+## v0.14 October 2026 consultation counterfactual
+
+- Adds LTA's indicative three-band and five-band OMV feebate structures in a
+  dedicated public tab.
+- Compares registration shares, weighted mean and mean absolute adjustment,
+  dispersion, adjacent-band cliffs and the lowest-to-highest effective-cost
+  spread.
+- Builds a quota-weighted Cat A/B historical price proxy from October 2015 and
+  applies both structures to a next-exercise planning proxy formed from the
+  existing separate-category forecasts and announced quotas.
+- Does not present the proxy as a merged-auction clearing price. Public tender
+  results do not contain individual bid values, so demand switching and the
+  counterfactual merged order book cannot be reconstructed.
+
+## v0.13 prior data refresh
 
 - Extends official completed outcomes through October 2026 Exercise 1: Cat A
   S$130,001, Cat B S$130,100 and Cat D S$11,012.
@@ -179,7 +193,8 @@ and 1.6% for Cat B, but trails it by about 4.5% for Cat D.
 
 See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and
 [docs/DEALER_SIGNALS.md](docs/DEALER_SIGNALS.md), plus
-[docs/ECONOMIC_FEATURES.md](docs/ECONOMIC_FEATURES.md).
+[docs/ECONOMIC_FEATURES.md](docs/ECONOMIC_FEATURES.md) and
+[docs/COE_CONSULTATION_SCENARIOS.md](docs/COE_CONSULTATION_SCENARIOS.md).
 
 ## Run locally
 

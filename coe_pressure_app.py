@@ -4,6 +4,14 @@ import pandas as pd
 import requests
 import streamlit as st
 
+from consultation_scenarios import (
+    CONSULTATION_PAPER_URL,
+    CONSULTATION_VERSION,
+    apply_feebates,
+    build_merged_proxy_history,
+    summarize_options,
+    weighted_premium,
+)
 from coe_model import (
     ANALYSIS_START,
     CATEGORIES,
@@ -32,7 +40,7 @@ from tender_timing import exercise_status, load_tender_schedule
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.13 October 2026 data refresh + timing-aware 1/2/4/6-cycle outlook • "
+    f"v0.14 COE consultation scenarios + October 2026 data refresh • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -182,7 +190,17 @@ st.info(
     "Earlier tenders are excluded from charts, training, tuning, intervals and benchmark metrics."
 )
 
-tabs = st.tabs([*CATEGORIES, "Multi-cycle outlook", "Dealer-signal experiment", "Economy & markets", "Methodology & audit"])
+tabs = st.tabs(
+    [
+        *CATEGORIES,
+        "Multi-cycle outlook",
+        "Dealer-signal experiment",
+        "Economy & markets",
+        "COE consultation scenarios",
+        "Methodology & audit",
+    ]
+)
+next_forecasts = {}
 
 for tab, category in zip(tabs[:3], CATEGORIES):
     with tab:
@@ -222,6 +240,7 @@ for tab, category in zip(tabs[:3], CATEGORIES):
             announced_tender_id=announced_tender_id,
             announced_quotas=announced_quotas,
         )
+        next_forecasts[category] = next_forecast
         st.subheader("Next bidding exercise: experimental three-way outlook")
         timing = exercise_status(tender_schedule, next_forecast.tender_id)
         if timing is not None:
@@ -652,7 +671,172 @@ with tabs[5]:
     )
 
 with tabs[6]:
-    st.subheader("Methodology & audit trail — v0.13")
+    st.subheader("October 2026 COE consultation: three-band versus five-band projection")
+    st.markdown(
+        f"""
+LTA is consulting on merging Categories A and B into one passenger-car COE pool and applying an Open Market Value (OMV)-based fee or rebate to the common clearing price. **Option A** has three bands at −S$15,000, S$0 and +S$15,000. **Option B** has five bands at −S$15,000, −S$7,500, S$0, +S$7,500 and +S$15,000. Bands would be assigned using registration-weighted OMV percentiles and reviewed annually. [Official consultation paper]({CONSULTATION_PAPER_URL})
+
+This tab is a mechanical counterfactual under `{CONSULTATION_VERSION}`. The public results contain category clearing prices and total bids, **not individual bid values**. It is therefore impossible to replay the clearing price of a merged auction exactly. The displayed common price is a quota-weighted Cat A/B accounting proxy—not a claim about the price a merged market would discover.
+"""
+    )
+
+    consultation_history = build_merged_proxy_history(df)
+    latest_proxy_row = consultation_history.iloc[-1]
+    latest_proxy = float(latest_proxy_row["pooled_price_proxy"])
+    announced_car_quotas = {
+        category: float(announced_quotas[category])
+        for category in ("Category A", "Category B")
+        if category in announced_quotas
+    }
+    if len(announced_car_quotas) < 2:
+        announced_car_quotas = {
+            "Category A": float(latest_proxy_row["cat_a_quota"]),
+            "Category B": float(latest_proxy_row["cat_b_quota"]),
+        }
+        quota_label = "last completed Cat A/B quotas"
+    else:
+        quota_label = f"official announced quotas for {announced_tender_id}"
+
+    next_proxy = None
+    if {"Category A", "Category B"}.issubset(next_forecasts):
+        next_proxy = weighted_premium(
+            {
+                category: next_forecasts[category].predicted_premium
+                for category in ("Category A", "Category B")
+            },
+            announced_car_quotas,
+        )
+
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric(
+        "Latest pooled price proxy",
+        f"S${latest_proxy:,.0f}",
+        help="Quota-weighted average of the completed Cat A and Cat B clearing prices. It is not a historical merged-auction price.",
+    )
+    p2.metric(
+        "Latest Cat A/B price gap",
+        f"S${latest_proxy_row.absolute_a_b_gap:,.0f}",
+        help="Absolute difference between the two completed category premiums.",
+    )
+    p3.metric(
+        "Combined completed quota",
+        f"{latest_proxy_row.combined_quota:,.0f}",
+        help="Cat A plus Cat B quota in the latest completed exercise.",
+    )
+    if next_proxy is not None:
+        p4.metric(
+            "Next-exercise planning proxy",
+            f"S${next_proxy:,.0f}",
+            f"{next_proxy - latest_proxy:+,.0f}",
+            help="Quota-weighted average of the separate Cat A/B structural forecasts. Behaviour under an actual merged auction could differ.",
+        )
+    else:
+        p4.metric("Next-exercise planning proxy", "Unavailable")
+
+    base_choices = {"Latest completed pooled proxy": latest_proxy}
+    if next_proxy is not None:
+        base_choices["Next-exercise planning proxy"] = next_proxy
+    selected_base_label = st.selectbox("Projection base", list(base_choices), index=len(base_choices) - 1)
+    selected_base = base_choices[selected_base_label]
+    projection = apply_feebates(selected_base)
+    display_projection = projection.copy()
+    display_projection["registration_share"] = display_projection["registration_share"].map(lambda value: f"{value:.0%}")
+    display_projection["adjustment"] = display_projection["adjustment"].map(format_signed_sgd)
+    display_projection["base_premium"] = display_projection["base_premium"].map(lambda value: f"S${value:,.0f}")
+    display_projection["effective_coe_cost"] = display_projection["effective_coe_cost"].map(lambda value: f"S${value:,.0f}")
+    display_projection = display_projection.rename(
+        columns={
+            "option": "Consultation option",
+            "band": "Band",
+            "omv_percentile": "2025 registration OMV percentile",
+            "registration_share": "Indicative share",
+            "adjustment": "Feebate",
+            "base_premium": "Common-price proxy",
+            "effective_coe_cost": "Effective COE cost",
+        }
+    )
+    st.dataframe(display_projection, hide_index=True, width="stretch")
+    st.caption(
+        f"Projection uses {selected_base_label.lower()}. The next-exercise proxy uses {quota_label}; "
+        "it preserves the current separate-category forecasts and applies the consultation schedules mechanically."
+    )
+
+    st.subheader("How the two structures compare")
+    option_summary = summarize_options()
+    formatted_summary = option_summary.rename(
+        columns={
+            "option": "Option",
+            "bands": "Bands",
+            "rebate_share": "Registration share receiving rebate",
+            "no_adjustment_share": "No-adjustment share",
+            "surcharge_share": "Surcharge share",
+            "mean_adjustment": "Weighted mean adjustment",
+            "mean_absolute_adjustment": "Mean absolute adjustment",
+            "adjustment_standard_deviation": "Adjustment dispersion",
+            "largest_adjacent_step": "Largest adjacent-band step",
+            "lowest_to_highest_spread": "Lowest-to-highest spread",
+        }
+    )
+    st.dataframe(
+        formatted_summary.style.format(
+            {
+                "Registration share receiving rebate": "{:.0%}",
+                "No-adjustment share": "{:.0%}",
+                "Surcharge share": "{:.0%}",
+                "Weighted mean adjustment": "S${:,.0f}",
+                "Mean absolute adjustment": "S${:,.0f}",
+                "Adjustment dispersion": "S${:,.0f}",
+                "Largest adjacent-band step": "S${:,.0f}",
+                "Lowest-to-highest spread": "S${:,.0f}",
+            }
+        ),
+        hide_index=True,
+        width="stretch",
+    )
+    st.info(
+        "Both options allocate 35% of registrations to rebates, 15% to no adjustment and 50% to surcharges. "
+        "Both imply the same S$30,000 bottom-to-top spread and a registration-weighted mean adjustment of +S$2,250. "
+        "The main measurable difference is smoothness: the five-band option halves the largest adjacent-band cliff "
+        "from S$15,000 to S$7,500 and lowers the mean absolute adjustment from S$12,750 to S$9,000."
+    )
+
+    historical_changes = consultation_history[["cat_a_change", "cat_b_change", "pooled_proxy_change"]].abs().mean()
+    h1, h2, h3, h4 = st.columns(4)
+    h1.metric("Cat A mean absolute tender change", f"S${historical_changes.cat_a_change:,.0f}")
+    h2.metric("Cat B mean absolute tender change", f"S${historical_changes.cat_b_change:,.0f}")
+    h3.metric("Pooled proxy mean absolute change", f"S${historical_changes.pooled_proxy_change:,.0f}")
+    h4.metric(
+        "Average absolute A/B gap",
+        f"S${consultation_history.absolute_a_b_gap.mean():,.0f}",
+    )
+    history_chart = consultation_history.set_index("display_date")[
+        ["cat_a_premium", "cat_b_premium", "pooled_price_proxy"]
+    ].rename(
+        columns={
+            "cat_a_premium": "Actual Cat A",
+            "cat_b_premium": "Actual Cat B",
+            "pooled_price_proxy": "Quota-weighted pooled proxy",
+        }
+    )
+    st.line_chart(history_chart)
+    st.caption(
+        "The pooled series is an accounting reconstruction from October 2015 onward. Lower historical movement in this proxy "
+        "does not prove that a merged auction would have produced the same path because bidder substitution and bid values are unobserved."
+    )
+    st.download_button(
+        "Download consultation counterfactual",
+        projection.to_csv(index=False).encode(),
+        "coe_consultation_feebate_projection.csv",
+        "text/csv",
+    )
+    st.warning(
+        "This analysis can compare the published feebate schedules, but it cannot estimate demand switching between models, "
+        "dealer absorption of fees, the merged clearing price, Category E redesign, or government receipts from actual registrations "
+        "without bid-level data and registration-level model/OMV counts."
+    )
+
+with tabs[7]:
+    st.subheader("Methodology & audit trail — v0.14")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -669,7 +853,7 @@ with tabs[6]:
     with st.expander("1. Purpose, scope and current status", expanded=True):
         st.markdown(
             f"""
-The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.13 refreshes all data streams and uses the official announced quota for the immediately upcoming exercise when the tender identity matches exactly.
+The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.14 adds a counterfactual comparison of the two feebate structures in LTA's October 2026 public consultation. The primary forecast itself remains under the existing COE regime.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
 
@@ -808,7 +992,18 @@ The 13-variable economy core produced mixed, marginal results. Adding financing 
 """
         )
 
-    with st.expander("9. Leakage controls and historical availability"):
+    with st.expander("9. October 2026 consultation counterfactual"):
+        st.markdown(
+            f"""
+LTA's consultation proposes merging Categories A and B into one passenger-car pool, with OMV-percentile fee-and-rebate bands applied to the common COE price. The three-band and five-band schedules shown in the consultation tab are transcribed from the [official paper]({CONSULTATION_PAPER_URL}). Their registration shares follow the published 2025 percentile cut-offs, not unweighted model counts.
+
+The historical common-price series is the quota-weighted average of the observed Cat A and Cat B clearing prices at each exercise. The next-exercise planning value applies the same quota weighting to the existing separate-category forecasts. Neither is a simulated merged-auction clearing price. Public tender results do not disclose individual bids, so bidder switching, price elasticity and the counterfactual order book cannot be identified. Feebates are applied only after that disclosed base proxy. Category E changes and COE renewals are outside the calculation.
+
+The weighted mean adjustment is a distributional property of the indicative percentile bands, not a government-revenue forecast. Actual receipts would depend on registrations, unused COEs, model choices, transition rules and market responses.
+"""
+        )
+
+    with st.expander("10. Leakage controls and historical availability"):
         st.markdown(
             """
 - Premiums, bids, bid pressure, excess demand, momentum and Cat E outcomes are lagged by at least one completed tender.
@@ -827,10 +1022,10 @@ The 13-variable economy core produced mixed, marginal results. Adding financing 
             for family, rule in {**FEATURE_AVAILABILITY, **ECONOMIC_FEATURE_AVAILABILITY}.items()
         ]
     )
-    with st.expander("10. Feature-by-feature availability rules"):
+    with st.expander("11. Feature-by-feature availability rules"):
         st.dataframe(availability, hide_index=True, width="stretch")
 
-    with st.expander("11. MVP audit findings and version history"):
+    with st.expander("12. MVP audit findings and version history"):
         st.markdown(
             """
 The original MVP audit found that comma-formatted official numbers could be coerced to missing values, recent tenders could therefore disappear, Ridge features were unscaled, month was treated as ordinal rather than cyclical, Cat E and announced supply were absent, and evaluation showed only persistence MAE. The dealer template also lacked sufficient provenance and enforceable historical cutoffs. The original premium and bid-pressure inputs were lagged, so no direct same-tender outcome leakage was found.
@@ -842,15 +1037,16 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **Data refresh v0.11:** official COE outcomes and paired dealer/economy walk-forward evaluations extended through September 2026 Exercise 2; tender-aligned markets and macro features retrieved again on 29 September 2026.
 - **v0.12:** added direct 1/2/4/6-exercise models, overlapping-label embargoes, official close-to-close gap exposure, category-specific dealer-oriented Stay bands, gap-segment evaluation and guaranteed-package calendar alignment.
 - **v0.13:** refreshed official outcomes through October 2026 Exercise 1, dealer documents through 16 October, market/macro cutoffs and all paired tests; added strict ingestion of announced next-exercise quotas and explicit 2027 calendar projection disclosure.
+- **v0.14:** added a transparent comparison of LTA's October 2026 three-band and five-band OMV feebate options, a quota-weighted historical Cat A/B accounting proxy and a next-exercise mechanical planning projection. No merged-auction clearing price is claimed.
 """
         )
 
-    with st.expander("12. Sources, reproducibility and known limitations"):
+    with st.expander("13. Sources, reproducibility and known limitations"):
         st.markdown(
             """
-**Primary sources:** [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) · [LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) · [SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) · [MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) · [SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) · [FRED economic data](https://fred.stlouisfed.org/)
+**Primary sources:** [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) · [LTA October 2026 COE consultation paper](https://go.gov.sg/coe-public-consult) · [LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) · [SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) · [MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) · [SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) · [FRED economic data](https://fred.stlouisfed.org/)
 
-**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; official tender timestamps begin in 2017 rather than October 2015; later-horizon quotas are not treated as known; and the six-exercise live view currently projects one 2027 interval at 14 days until LTA publishes a schedule covering it.
+**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; official tender timestamps begin in 2017 rather than October 2015; later-horizon quotas are not treated as known; the six-exercise live view currently projects one 2027 interval at 14 days until LTA publishes a schedule covering it; and the consultation counterfactual cannot reconstruct a merged auction without individual bid values and registration-level model/OMV counts.
 
 The repository versions the model code, methodology, source manifests, checksums, tender schedule, feature datasets and back-test outputs. Negative results remain visible. A credible calibration or forecasting-edge claim requires future predictions frozen before bidding and evaluated after the outcomes arrive.
 """
