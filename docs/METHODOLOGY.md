@@ -1,4 +1,4 @@
-# v0.14 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+# v0.15 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
 
 ## v0.14 October 2026 consultation scenarios
 
@@ -50,8 +50,8 @@ rather than as ordinary planned tenders.
 
 When a live horizon extends beyond the bundled official schedule, the app
 projects only the missing close-to-close interval at 14 days and labels that
-calendar input as projected. The current six-exercise outlook contains one such
-interval in January 2027; it is not represented as an official LTA date.
+calendar input as projected. The current six-exercise outlook contains two such
+intervals in January 2027; they are not represented as official LTA dates.
 
 The analysis window still begins in October 2015. Historical multi-horizon test
 origins begin only after the 60-example training requirement, by which point
@@ -261,11 +261,11 @@ These macro rules are conservative publication buffers, not reconstructed
 release timestamps. SingStat serves current-vintage data that may contain later
 revisions. Therefore the economy results are a revision-risk sensitivity test, not
 a fully vintage-correct real-time back-test. The post-policy paired test covers
-196 forecasts per category. The 13-variable economy core worsens MAE by 0.74%
-for Cat A, worsens it by 0.14% for Cat B, and worsens it by 4.22% for Cat D.
+197 forecasts per category. The 13-variable economy core worsens MAE by 0.60%
+for Cat A, worsens it by 0.13% for Cat B, and worsens it by 4.29% for Cat D.
 This result leaves the
 variant as a visible research candidate rather than the deployed primary model.
-Adding financing to that economy block worsens MAE a further 0.36% for Cat A,
-1.21% for Cat B and 1.06% for Cat D. Against structural-only, the 15-variable
-variant worsens MAE by 1.10%, 1.36% and 5.32%, respectively, so it also remains
+Adding financing to that economy block worsens MAE a further 0.32% for Cat A,
+1.22% for Cat B and 1.10% for Cat D. Against structural-only, the 15-variable
+variant worsens MAE by 0.93%, 1.36% and 5.44%, respectively, so it also remains
 experimental.

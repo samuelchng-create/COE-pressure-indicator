@@ -40,7 +40,7 @@ from tender_timing import exercise_status, load_tender_schedule
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.14 COE consultation scenarios + October 2026 data refresh • "
+    f"v0.15 October Exercise 2 results + COE consultation scenarios • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -836,7 +836,7 @@ This tab is a mechanical counterfactual under `{CONSULTATION_VERSION}`. The publ
     )
 
 with tabs[7]:
-    st.subheader("Methodology & audit trail — v0.14")
+    st.subheader("Methodology & audit trail — v0.15")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -853,7 +853,7 @@ with tabs[7]:
     with st.expander("1. Purpose, scope and current status", expanded=True):
         st.markdown(
             f"""
-The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.14 adds a counterfactual comparison of the two feebate structures in LTA's October 2026 public consultation. The primary forecast itself remains under the existing COE regime.
+The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.15 extends all eligible evaluations through October 2026 Exercise 2 while retaining the v0.14 counterfactual comparison of LTA's two consultation structures. The primary forecast itself remains under the existing COE regime.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
 
@@ -1038,6 +1038,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **v0.12:** added direct 1/2/4/6-exercise models, overlapping-label embargoes, official close-to-close gap exposure, category-specific dealer-oriented Stay bands, gap-segment evaluation and guaranteed-package calendar alignment.
 - **v0.13:** refreshed official outcomes through October 2026 Exercise 1, dealer documents through 16 October, market/macro cutoffs and all paired tests; added strict ingestion of announced next-exercise quotas and explicit 2027 calendar projection disclosure.
 - **v0.14:** added a transparent comparison of LTA's October 2026 three-band and five-band OMV feebate options, a quota-weighted historical Cat A/B accounting proxy and a next-exercise mechanical planning projection. No merged-auction clearing price is claimed.
+- **v0.15:** incorporated the confirmed 21 October 2026 Exercise 2 outcomes, reran every structural, dealer, economy and multi-horizon evaluation, and retargeted the live outlook to November Exercise 1. The next quota remains a disclosed last-completed fallback until LTA identifies the upcoming tender on OneMotoring.
 """
         )
 
@@ -1046,7 +1047,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
             """
 **Primary sources:** [data.gov.sg COE Bidding Results](https://data.gov.sg/datasets/d_69b3380ad7e51aff3a7dcc84eba52b8a/view) · [LTA October 2026 COE consultation paper](https://go.gov.sg/coe-public-consult) · [LTA transport statistics](https://www.lta.gov.sg/content/ltagov/en/who_we_are/statistics_and_publications/statistics.html) · [SGCarMart price-list archive](https://www.sgcarmart.com/new-cars/pricelists) · [MAS bank and finance-company interest rates](https://eservices.mas.gov.sg/statistics/msb/InterestRatesOfBanksAndFinanceCompanies.aspx) · [SingStat Table Builder](https://tablebuilder.singstat.gov.sg/) · [FRED economic data](https://fred.stlouisfed.org/)
 
-**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; official tender timestamps begin in 2017 rather than October 2015; later-horizon quotas are not treated as known; the six-exercise live view currently projects one 2027 interval at 14 days until LTA publishes a schedule covering it; and the consultation counterfactual cannot reconstruct a merged auction without individual bid values and registration-level model/OMV counts.
+**Known limitations:** reconstructed dealer availability is weaker than a prospectively frozen collection; only a subset of brands produces category-labelled eligible observations; advertised finance-rate coverage is narrow; Cat D lacks dealer-price-list signals; macro data may be revised; the vehicle-finance proxy is stale and not split between cars and motorcycles; official tender timestamps begin in 2017 rather than October 2015; later-horizon quotas are not treated as known; the six-exercise live view currently projects two 2027 intervals at 14 days until LTA publishes a schedule covering them; and the consultation counterfactual cannot reconstruct a merged auction without individual bid values and registration-level model/OMV counts.
 
 The repository versions the model code, methodology, source manifests, checksums, tender schedule, feature datasets and back-test outputs. Negative results remain visible. A credible calibration or forecasting-edge claim requires future predictions frozen before bidding and evaluated after the outcomes arrive.
 """
