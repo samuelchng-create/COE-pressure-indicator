@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.15 October Exercise 2 refresh
+# Singapore COE Pressure Indicator — v0.16 November Exercise 1 pre-bid refresh
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -7,6 +7,20 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is prospectively calibrated. Negative benchmark results remain visible.
+
+## v0.16 November 2026 Exercise 1 pre-bid refresh
+
+- Uses LTA's announced live quotas for the 4 November 2026 exercise: Cat A
+  1,189, Cat B 959, Cat D 509 and Cat E 287. Live bid counts and provisional
+  prices remain excluded from all model inputs.
+- Rebuilds the direct 1/2/4/6-cycle forecasts from the 21 October endpoint.
+  The primary model continues to use only the next announced supply; later
+  quotas are not treated as known.
+- Extends the SGCarMart archive through 29 October 2026 to 1,585 source PDFs,
+  4,084 auditable page rows and 1,204 model-eligible observations.
+- Refreshes the tender-aligned economy and market snapshot through the
+  2 November forecast cutoff, while retaining explicit publication lags and
+  financing-series staleness.
 
 ## v0.15 October 2026 Exercise 2 refresh
 
@@ -148,11 +162,11 @@ avoid mixing materially different policy regimes into the reported results.
 - Excludes Category D because SGCarMart's car price-list archive is not a
   motorcycle dealer archive.
 
-The refreshed archive contains 1,562 source PDFs, 4,012 auditable page rows and
-1,182 model-eligible observations from 11 grouped brands. It contains 138 explicit
+The refreshed archive contains 1,585 source PDFs, 4,084 auditable page rows and
+1,204 model-eligible observations from 11 grouped brands. It contains 138 explicit
 advertised car-finance rates, all from Honda documents and ranging from 2.58%
 to 2.78%; this narrow coverage is disclosed. The latest SGCarMart document is
-dated 16 October 2026. Over 55 paired forecasts per category, the v0.8 dealer
+dated 29 October 2026. Over 55 paired forecasts per category, the v0.8 dealer
 variant improved Cat A MAE by 1.50% but worsened Cat B MAE by 11.47%. The small
 retrospective Cat A result is not treated as a validated edge, and no calibrated
 Dealer Pressure Index or probabilities are published.

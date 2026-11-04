@@ -40,7 +40,7 @@ from tender_timing import exercise_status, load_tender_schedule
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.15 October Exercise 2 results + COE consultation scenarios • "
+    f"v0.16 November Exercise 1 pre-bid refresh + COE consultation scenarios • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -836,7 +836,7 @@ This tab is a mechanical counterfactual under `{CONSULTATION_VERSION}`. The publ
     )
 
 with tabs[7]:
-    st.subheader("Methodology & audit trail — v0.15")
+    st.subheader("Methodology & audit trail — v0.16")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -853,7 +853,7 @@ with tabs[7]:
     with st.expander("1. Purpose, scope and current status", expanded=True):
         st.markdown(
             f"""
-The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.15 extends all eligible evaluations through October 2026 Exercise 2 while retaining the v0.14 counterfactual comparison of LTA's two consultation structures. The primary forecast itself remains under the existing COE regime.
+The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.16 refreshes the pre-bid inputs for November 2026 Exercise 1, including LTA's announced category and Cat E quotas, SGCarMart documents through 29 October and tender-aligned market data through the 2 November opening cutoff. All eligible evaluations still end at the latest completed result, October 2026 Exercise 2, and the v0.14 counterfactual comparison of LTA's two consultation structures is retained. The primary forecast itself remains under the existing COE regime.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
 
@@ -1039,6 +1039,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **v0.13:** refreshed official outcomes through October 2026 Exercise 1, dealer documents through 16 October, market/macro cutoffs and all paired tests; added strict ingestion of announced next-exercise quotas and explicit 2027 calendar projection disclosure.
 - **v0.14:** added a transparent comparison of LTA's October 2026 three-band and five-band OMV feebate options, a quota-weighted historical Cat A/B accounting proxy and a next-exercise mechanical planning projection. No merged-auction clearing price is claimed.
 - **v0.15:** incorporated the confirmed 21 October 2026 Exercise 2 outcomes, reran every structural, dealer, economy and multi-horizon evaluation, and retargeted the live outlook to November Exercise 1. The next quota remains a disclosed last-completed fallback until LTA identifies the upcoming tender on OneMotoring.
+- **v0.16:** incorporated LTA's announced 4 November quotas (A 1,189; B 959; D 509; E 287), refreshed SGCarMart evidence through 29 October and market/economy cutoffs through 2 November, and rebuilt the direct multi-cycle outlook. Live bids and provisional prices remain excluded.
 """
         )
 

@@ -1,4 +1,14 @@
-# v0.15 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+# v0.16 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+
+## v0.16 November 2026 Exercise 1 pre-bid refresh
+
+The forecast origin remains the confirmed 21 October 2026 outcome. For the
+exercise closing on 4 November 2026, the live structural and multi-cycle rows
+use LTA's announced quotas of 1,189 (Category A), 959 (Category B), 509
+(Category D) and 287 (Category E). The quota parser deliberately ignores live
+bid counts and provisional prices. Dealer evidence is refreshed through
+29 October, and market/economy variables use the 2 November opening cutoff
+with the same as-of publication rules documented below.
 
 ## v0.14 October 2026 consultation scenarios
 
@@ -79,8 +89,8 @@ direct structural forecast's residual. A historical residual becomes eligible
 for training only when its own terminal target exercise had completed by the
 new forecast origin. This second embargo is necessary because simply ordering
 dealer rows by first upcoming tender would leak unfinished multi-cycle labels.
-The paired sample contains 54/52/48/44 forecasts at horizons 1/2/4/6. Only Cat
-A at one exercise improves MAE (+2.9%); Cat A at 2/4/6 and Cat B at all four
+The paired sample contains 55/53/49/45 forecasts at horizons 1/2/4/6. Only Cat
+A at one exercise improves MAE (+3.3%); Cat A at 2/4/6 and Cat B at all four
 horizons worsen MAE. No live dealer adjustment is therefore published.
 
 ## Multi-horizon economy, markets and financing comparison

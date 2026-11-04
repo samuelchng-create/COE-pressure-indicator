@@ -78,6 +78,12 @@ def main() -> None:
                 status = "ocr" if succeeded else "ocr_error"
                 print(f"{status}={processed} {pdf.relative_to(args.corpus)}", flush=True)
 
+        # A one-shot run should attempt each pending file once. Error markers
+        # remain non-reusable so a later invocation can retry them, but must not
+        # make this invocation loop forever on a persistent OCR failure.
+        if not args.follow:
+            break
+
 
 if __name__ == "__main__":
     main()
