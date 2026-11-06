@@ -33,14 +33,18 @@ from economic_features import (
     ECONOMIC_MODEL_VERSION,
     validate_economic_features,
 )
-from official_results import parse_one_motoring_final_results, parse_one_motoring_upcoming_quotas
+from official_results import (
+    parse_one_motoring_final_results,
+    parse_one_motoring_upcoming_quotas,
+    reconcile_one_motoring_final_results,
+)
 from tender_timing import exercise_status, load_tender_schedule
 
 
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.16 November Exercise 1 pre-bid refresh + COE consultation scenarios • "
+    f"v0.17 November Exercise 1 results refresh + COE consultation scenarios • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -154,12 +158,7 @@ def load_coe(cache_version: str) -> tuple[pd.DataFrame, list[str], str | None, d
             upcoming = None
         if upcoming is not None:
             upcoming_tender_id, upcoming_quotas = upcoming
-    existing = {(row["month"], str(row["bidding_no"]), row["vehicle_class"]) for row in records}
-    for row in final_records:
-        key = (row["month"], row["bidding_no"], row["vehicle_class"])
-        if key not in existing:
-            records.append(row)
-            direct_tenders.append(f"{row['month']}-{row['bidding_no']}")
+    records, direct_tenders = reconcile_one_motoring_final_results(records, final_records)
     return prepare_coe_data(records), sorted(set(direct_tenders)), upcoming_tender_id, upcoming_quotas
 
 
@@ -178,11 +177,13 @@ except Exception as error:
 tender_schedule = load_tender_schedule(
     Path(__file__).parent / "data" / "tender_schedule_2017_2026.csv"
 )
+frozen_forecast_path = Path(__file__).parent / "data" / "frozen_forecast_log.csv"
+frozen_forecasts = pd.read_csv(frozen_forecast_path) if frozen_forecast_path.exists() else pd.DataFrame()
 
 if direct_result_tenders:
     st.success(
-        f"Official final result {direct_result_tenders[-1]} loaded directly from "
-        f"[LTA OneMotoring]({ONEMOTORING_RESULTS_URL}) while the data.gov.sg archive synchronises."
+        f"Official final result {direct_result_tenders[-1]} loaded or reconciled directly from "
+        f"[LTA OneMotoring]({ONEMOTORING_RESULTS_URL}) where the data.gov.sg archive was absent or differed."
     )
 
 st.info(
@@ -213,6 +214,21 @@ for tab, category in zip(tabs[:3], CATEGORIES):
         c2.metric("Completed-tender bid / quota", f"{pressure:.2f}×", help=METRIC_HELP["bid_quota"])
         c3.metric("Bids received", f"{latest['bids_received']:,.0f}", help=METRIC_HELP["bids_received"])
         c4.metric("Quota", f"{latest['quota']:,.0f}", help=METRIC_HELP["quota"])
+
+        if not frozen_forecasts.empty:
+            completed_audit = frozen_forecasts[
+                frozen_forecasts["category"].eq(category)
+                & frozen_forecasts["target_tender_id"].eq(str(latest["tender_id"]))
+            ]
+            if not completed_audit.empty:
+                audit = completed_audit.iloc[-1]
+                audit_status = "correct" if bool(audit["outcome_correct"]) else "incorrect"
+                st.caption(
+                    f"Frozen {audit['forecast_version']} forecast audit: predicted {audit['predicted_outcome']} "
+                    f"({format_signed_sgd(audit['predicted_change'])}) before bidding; actual outcome was "
+                    f"{audit['actual_outcome']} ({format_signed_sgd(audit['actual_change'])}). "
+                    f"Absolute error S${abs(audit['absolute_error']):,.0f}; three-way outcome {audit_status}."
+                )
 
         history = (
             category_data[["display_date", "premium"]]
@@ -509,11 +525,34 @@ with tabs[4]:
                 "sgcarmart_dealer_observations_2024_2026.csv",
                 "text/csv",
             )
+            observed_dates_sgt = pd.to_datetime(archive["observed_at"], utc=True).dt.tz_convert("Asia/Singapore")
             st.caption(
-                f"Dated observations: {validated_archive['observed_at'].min().date()} to {validated_archive['observed_at'].max().date()}. "
+                f"Dated observations: {observed_dates_sgt.min().date()} to {observed_dates_sgt.max().date()}. "
                 f"The source corpus covers {source_brand_count} marques in {len(REQUESTED_BRAND_GROUPS)} requested groups; eligible rows from "
                 f"{', '.join(sorted(validated_archive['brand'].unique()))} require an explicit Cat A/B page label and extracted advertised prices."
             )
+            byd_rows = validated_archive[validated_archive["brand"].eq("BYD")]
+            if not byd_rows.empty:
+                byd_latest = pd.to_datetime(byd_rows["observed_at"], utc=True).dt.tz_convert("Asia/Singapore").max().date()
+                byd_categories = ", ".join(sorted(byd_rows["category"].unique()))
+                st.info(
+                    f"BYD is included with {len(byd_rows):,} model-eligible observations across "
+                    f"{byd_categories}; its latest archived price list is dated {byd_latest:%-d %B %Y}. "
+                    "A newer BYD document is not imputed when SGCarMart has not published one."
+                )
+            mercedes_sources = (
+                dealer_manifest[dealer_manifest["brand"].eq("Mercedes-Benz")]
+                if not dealer_manifest.empty
+                else pd.DataFrame()
+            )
+            if not mercedes_sources.empty:
+                mercedes_latest = pd.to_datetime(mercedes_sources["document_date"]).max().date()
+                st.info(
+                    f"Mercedes-Benz is covered by {len(mercedes_sources):,} archived source PDFs through "
+                    f"{mercedes_latest:%-d %B %Y}, but currently has 0 model-eligible rows because its price-list "
+                    "pages do not explicitly label Cat A versus Cat B. The pages remain in the audit corpus; the "
+                    "model does not guess a COE category from price alone."
+                )
             if not dealer_manifest.empty:
                 coverage = dealer_manifest[["brand", "document_date"]].copy()
                 coverage["Brand group"] = coverage["brand"].map(SOURCE_TO_BRAND_GROUP)
@@ -836,7 +875,7 @@ This tab is a mechanical counterfactual under `{CONSULTATION_VERSION}`. The publ
     )
 
 with tabs[7]:
-    st.subheader("Methodology & audit trail — v0.16")
+    st.subheader("Methodology & audit trail — v0.17")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -853,7 +892,7 @@ with tabs[7]:
     with st.expander("1. Purpose, scope and current status", expanded=True):
         st.markdown(
             f"""
-The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.16 refreshes the pre-bid inputs for November 2026 Exercise 1, including LTA's announced category and Cat E quotas, SGCarMart documents through 29 October and tender-aligned market data through the 2 November opening cutoff. All eligible evaluations still end at the latest completed result, October 2026 Exercise 2, and the v0.14 counterfactual comparison of LTA's two consultation structures is retained. The primary forecast itself remains under the existing COE regime.
+The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.17 adds the confirmed November 2026 Exercise 1 outcome, preserves the frozen v0.16 prediction for realised-error audit, extends every eligible evaluation by one exercise and retargets the live outlook to November Exercise 2. The dealer audit corpus is refreshed through 6 November. The v0.14 counterfactual comparison of LTA's two consultation structures is retained, and the primary forecast remains under the existing COE regime.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
 
@@ -881,7 +920,7 @@ This is public-interest statistical analysis, not a bidding recommendation or fi
         st.markdown(
             "The audit distinguishes the date information was economically available from the later date it was collected for research. "
             "Source URLs and checksums are retained where applicable. Official data.gov.sg results and LTA OneMotoring are checked with a "
-            "five-minute application cache. A confirmed OneMotoring result can bridge an archive delay, but provisional closing prices are "
+            "five-minute application cache. A confirmed OneMotoring result can bridge an archive delay or reconcile a same-tender field mismatch, but provisional closing prices are "
             "not admitted to model training while LTA says results are being finalised."
         )
         coverage_rows = [
@@ -1040,6 +1079,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **v0.14:** added a transparent comparison of LTA's October 2026 three-band and five-band OMV feebate options, a quota-weighted historical Cat A/B accounting proxy and a next-exercise mechanical planning projection. No merged-auction clearing price is claimed.
 - **v0.15:** incorporated the confirmed 21 October 2026 Exercise 2 outcomes, reran every structural, dealer, economy and multi-horizon evaluation, and retargeted the live outlook to November Exercise 1. The next quota remains a disclosed last-completed fallback until LTA identifies the upcoming tender on OneMotoring.
 - **v0.16:** incorporated LTA's announced 4 November quotas (A 1,189; B 959; D 509; E 287), refreshed SGCarMart evidence through 29 October and market/economy cutoffs through 2 November, and rebuilt the direct multi-cycle outlook. Live bids and provisional prices remain excluded.
+- **v0.17:** appended the confirmed 4 November outcomes, recorded the frozen v0.16 prediction and realised errors, reran all structural/dealer/economy/multi-horizon evaluations, retargeted the outlook to November Exercise 2, and refreshed the SGCarMart corpus through 6 November. BYD and Mercedes-Benz coverage status is now explicit.
 """
         )
 

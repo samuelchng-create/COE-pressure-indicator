@@ -1,0 +1,4 @@
+forecast_version,issued_at,target_tender_id,category,previous_premium,predicted_change,predicted_premium,predicted_outcome,probability_increase,probability_stay,probability_decrease,actual_premium,actual_change,actual_outcome,absolute_error,outcome_correct
+v0.16,2026-11-04T09:23:00+08:00,2026-11-1,Category A,132004,-1604,130400,Decrease,0.250,0.250,0.500,139001,6997,Increase,8601,False
+v0.16,2026-11-04T09:23:00+08:00,2026-11-1,Category B,131901,-2698,129203,Decrease,0.210,0.150,0.640,132334,433,Stay,3131,False
+v0.16,2026-11-04T09:23:00+08:00,2026-11-1,Category D,10778,26,10804,Stay,0.040,0.925,0.035,10689,-89,Stay,115,True

@@ -1,4 +1,21 @@
-# v0.16 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+# v0.17 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+
+## v0.17 November 2026 Exercise 1 result and frozen-forecast audit
+
+The confirmed 4 November result is appended as a new outer-test observation:
+Cat A S$139,001, Cat B S$132,334 and Cat D S$10,689. The pre-bid v0.16
+forecast is retained separately in `data/frozen_forecast_log.csv`, including
+the issue timestamp, probabilities, predicted change, realised outcome and
+error. Cat A and Cat B missed their three-way outcomes; Cat D correctly
+predicted Stay. The live forecast now targets November Exercise 2 and visibly
+uses the last-completed quota fallback until LTA identifies the next tender's
+announced quotas.
+
+The dealer corpus now covers 1,600 PDFs through 6 November. BYD contributes
+219 eligible Cat A/B observations through 27 October. Mercedes-Benz is covered
+by 94 source PDFs through 23 October, but its pages remain unclassified because
+they do not explicitly identify Cat A versus Cat B; the model does not infer a
+category from advertised price alone.
 
 ## v0.16 November 2026 Exercise 1 pre-bid refresh
 
@@ -89,8 +106,8 @@ direct structural forecast's residual. A historical residual becomes eligible
 for training only when its own terminal target exercise had completed by the
 new forecast origin. This second embargo is necessary because simply ordering
 dealer rows by first upcoming tender would leak unfinished multi-cycle labels.
-The paired sample contains 55/53/49/45 forecasts at horizons 1/2/4/6. Only Cat
-A at one exercise improves MAE (+3.3%); Cat A at 2/4/6 and Cat B at all four
+The paired sample contains 56/54/50/46 forecasts at horizons 1/2/4/6. Only Cat
+A at one exercise improves MAE (+3.6%); Cat A at 2/4/6 and Cat B at all four
 horizons worsen MAE. No live dealer adjustment is therefore published.
 
 ## Multi-horizon economy, markets and financing comparison
@@ -99,9 +116,9 @@ The 13-variable economy/markets block and the 15-variable block that also
 contains the MAS vehicle hire-purchase rate and its age are re-fitted directly
 at every category/horizon pair. Each comparison uses the same origins as its
 structural model and the same terminal-label embargo. The economy/markets block
-improves Cat A MAE at 2/4/6 exercises and Cat B MAE at all four horizons (from
-+0.1% to +4.3%), but is slightly worse for Cat A at one exercise and worse for
-Cat D. Adding the financing proxy worsens all twelve comparisons. These
+improves Cat A and Cat B MAE at all four horizons (from +0.1% to +5.1%), but is
+worse for Cat D. Adding the financing proxy improves only Cat A at four
+exercises, by 0.2%, and worsens the other eleven comparisons. These
 are current-vintage macro sensitivity tests, not prospectively frozen model
 upgrades, so neither candidate changes the live structural forecast.
 
@@ -114,8 +131,11 @@ from that page only when a confirmed `Results for ... Open Bidding Exercise`
 or `Final Results for ... Open Bidding Exercise` heading is present and both result tables contain Categories A–E exactly once,
 including premium, quota, bids received and successful bids. A live bidding
 table or a page saying results are being finalised is not admitted to model
-training. Once data.gov.sg contains the same tender, its archive record takes
-precedence and the bridge adds nothing. Both checks use a five-minute cache.
+training. When data.gov.sg contains the same tender, the current confirmed
+OneMotoring final table reconciles quota, premium and bid totals if they differ,
+while other archive metadata is preserved. This prevented a two-bid Cat B
+archive discrepancy in November 2026 Exercise 1 from entering the live model.
+Both checks use a five-minute cache.
 The separate quota parser may read only the announced quota column from an
 identified next-exercise or live-bidding table; current prices and bid counts
 remain excluded from both training and forecasting inputs.
@@ -271,11 +291,11 @@ These macro rules are conservative publication buffers, not reconstructed
 release timestamps. SingStat serves current-vintage data that may contain later
 revisions. Therefore the economy results are a revision-risk sensitivity test, not
 a fully vintage-correct real-time back-test. The post-policy paired test covers
-197 forecasts per category. The 13-variable economy core worsens MAE by 0.60%
-for Cat A, worsens it by 0.13% for Cat B, and worsens it by 4.29% for Cat D.
+198 forecasts per category. The 13-variable economy core worsens MAE by 0.59%
+for Cat A, worsens it by 0.18% for Cat B, and worsens it by 4.21% for Cat D.
 This result leaves the
 variant as a visible research candidate rather than the deployed primary model.
-Adding financing to that economy block worsens MAE a further 0.32% for Cat A,
-1.22% for Cat B and 1.10% for Cat D. Against structural-only, the 15-variable
-variant worsens MAE by 0.93%, 1.36% and 5.44%, respectively, so it also remains
+Adding financing to that economy block worsens MAE a further 0.29% for Cat A,
+1.21% for Cat B and 1.14% for Cat D. Against structural-only, the 15-variable
+variant worsens MAE by 0.88%, 1.39% and 5.40%, respectively, so it also remains
 experimental.

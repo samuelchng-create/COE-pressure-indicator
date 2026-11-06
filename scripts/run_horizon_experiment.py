@@ -18,7 +18,11 @@ from horizon_model import (
     summarize_horizon,
     walk_forward_horizon_backtest,
 )
-from official_results import parse_one_motoring_upcoming_quotas
+from official_results import (
+    parse_one_motoring_final_results,
+    parse_one_motoring_upcoming_quotas,
+    reconcile_one_motoring_final_results,
+)
 from tender_timing import load_tender_schedule
 
 
@@ -35,13 +39,17 @@ def main() -> None:
         capture_output=True,
         text=True,
     )
-    data = prepare_coe_data(json.loads(response.stdout)["result"]["records"])
+    records = json.loads(response.stdout)["result"]["records"]
     upcoming_response = subprocess.run(
         ["curl", "-fsSL", "--retry", "3", "--retry-delay", "2", ONEMOTORING_URL],
         check=True,
         capture_output=True,
         text=True,
     )
+    records, _ = reconcile_one_motoring_final_results(
+        records, parse_one_motoring_final_results(upcoming_response.stdout)
+    )
+    data = prepare_coe_data(records)
     upcoming = parse_one_motoring_upcoming_quotas(upcoming_response.stdout)
     announced_tender_id, announced_quotas = upcoming if upcoming is not None else (None, {})
     schedule = load_tender_schedule(ROOT / "data" / "tender_schedule_2017_2026.csv")

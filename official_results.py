@@ -133,6 +133,39 @@ def parse_one_motoring_final_results(html: str) -> list[dict[str, str]]:
     ]
 
 
+def reconcile_one_motoring_final_results(
+    archive_records: list[dict[str, object]],
+    final_records: list[dict[str, str]],
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Add or reconcile the current official final table against the archive.
+
+    OneMotoring is the final-result publication surface. If data.gov.sg already
+    contains the same tender but a result field differs, preserve the archive
+    row's other metadata while replacing quota, premium and bid totals with the
+    final OneMotoring values. This also covers the normal archive-delay case.
+    """
+    records = [dict(row) for row in archive_records]
+    positions = {
+        (str(row.get("month")), str(row.get("bidding_no")), str(row.get("vehicle_class"))): index
+        for index, row in enumerate(records)
+    }
+    reconciled_tenders: set[str] = set()
+    result_fields = ("quota", "premium", "bids_received", "bids_success")
+    for final in final_records:
+        key = (final["month"], str(final["bidding_no"]), final["vehicle_class"])
+        tender_id = f"{final['month']}-{final['bidding_no']}"
+        if key not in positions:
+            records.append(dict(final))
+            positions[key] = len(records) - 1
+            reconciled_tenders.add(tender_id)
+            continue
+        existing = records[positions[key]]
+        if any(str(existing.get(field)) != str(final[field]) for field in result_fields):
+            existing.update({field: final[field] for field in result_fields})
+            reconciled_tenders.add(tender_id)
+    return records, sorted(reconciled_tenders)
+
+
 def parse_one_motoring_upcoming_quotas(html: str) -> tuple[str, dict[str, int]] | None:
     """Return a strictly identified upcoming/active tender and announced quotas.
 

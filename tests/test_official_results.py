@@ -1,6 +1,10 @@
 import pytest
 
-from official_results import parse_one_motoring_final_results, parse_one_motoring_upcoming_quotas
+from official_results import (
+    parse_one_motoring_final_results,
+    parse_one_motoring_upcoming_quotas,
+    reconcile_one_motoring_final_results,
+)
 
 
 FINAL_HTML = """
@@ -49,6 +53,22 @@ def test_parses_current_final_heading_variant():
         FINAL_HTML.replace("Results for SEPTEMBER", "Final Results for SEPTEMBER")
     )
     assert len(records) == 5
+
+
+def test_reconciles_same_tender_archive_mismatch_and_preserves_metadata():
+    final = parse_one_motoring_final_results(FINAL_HTML)
+    archived = [dict(final[0], bids_received="1706", _id=123)]
+    records, tenders = reconcile_one_motoring_final_results(archived, final[:1])
+    assert records[0]["bids_received"] == "1708"
+    assert records[0]["_id"] == 123
+    assert tenders == ["2026-09-1"]
+
+
+def test_appends_final_result_missing_from_archive():
+    final = parse_one_motoring_final_results(FINAL_HTML)
+    records, tenders = reconcile_one_motoring_final_results([], final[:1])
+    assert records == final[:1]
+    assert tenders == ["2026-09-1"]
 
 
 def test_provisional_table_without_final_result_heading_is_ignored():
