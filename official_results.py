@@ -98,7 +98,14 @@ def parse_one_motoring_final_results(html: str) -> list[dict[str, str]]:
     bidding_no = "1" if ordinal.lower() == "1st" else "2"
 
     result_table = next(
-        (table for table in parser.tables if table and table[0][-2:] == ["Quota", "QP($)"]),
+        (
+            table
+            for table in parser.tables
+            if table
+            and "Quota" in table[0]
+            and "QP($)" in table[0]
+            and "Received" not in table[0]
+        ),
         None,
     )
     bid_table = next(
@@ -112,7 +119,13 @@ def parse_one_motoring_final_results(html: str) -> list[dict[str, str]]:
     if result_table is None or bid_table is None:
         raise ValueError("Confirmed OneMotoring result tables are incomplete")
 
-    prices = {row[0]: (_integer(row[-2]), _integer(row[-1])) for row in result_table[1:] if len(row) >= 4}
+    has_pqp = "PQP($)" in result_table[0]
+    quota_position, premium_position = (-3, -2) if has_pqp else (-2, -1)
+    prices = {
+        row[0]: (_integer(row[quota_position]), _integer(row[premium_position]))
+        for row in result_table[1:]
+        if len(row) >= (5 if has_pqp else 4)
+    }
     bids = {row[0]: (_integer(row[-4]), _integer(row[-3])) for row in bid_table[1:] if len(row) >= 6}
     expected = set("ABCDE")
     if set(prices) != expected or set(bids) != expected:

@@ -44,7 +44,7 @@ from tender_timing import exercise_status, load_tender_schedule
 st.set_page_config(page_title="Singapore COE Pressure Indicator", layout="wide")
 st.title("Singapore COE Pressure Indicator")
 st.caption(
-    f"v0.17 November Exercise 1 results refresh + COE consultation scenarios • "
+    f"v0.18 November Exercise 2 results refresh + COE consultation scenarios • "
     f"{MODEL_VERSION} • experimental, uncalibrated public-interest analysis"
 )
 
@@ -875,7 +875,7 @@ This tab is a mechanical counterfactual under `{CONSULTATION_VERSION}`. The publ
     )
 
 with tabs[7]:
-    st.subheader("Methodology & audit trail — v0.17")
+    st.subheader("Methodology & audit trail — v0.18")
     st.write(
         "This section documents what the indicator is designed to answer, how every forecast is produced, "
         "which information is allowed at each historical cutoff, what changed since the original MVP, and "
@@ -892,7 +892,7 @@ with tabs[7]:
     with st.expander("1. Purpose, scope and current status", expanded=True):
         st.markdown(
             f"""
-The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.17 adds the confirmed November 2026 Exercise 1 outcome, preserves the frozen v0.16 prediction for realised-error audit, extends every eligible evaluation by one exercise and retargets the live outlook to November Exercise 2. The dealer audit corpus is refreshed through 6 November. The v0.14 counterfactual comparison of LTA's two consultation structures is retained, and the primary forecast remains under the existing COE regime.
+The app studies COE bidding exercises separately for **Category A, Category B and Category D**. Its primary model predicts the next exercise's dollar change. The experimental multi-cycle layer adds direct 1, 2, 4 and 6-exercise forecasts aligned to dealer package horizons and official calendar duration. v0.18 adds the confirmed 18 November 2026 outcome, preserves the pre-bid v0.17 prediction for realised-error audit, extends every eligible evaluation by one exercise and retargets the live outlook to December Exercise 1. All three v0.17 three-way calls were correct: Decrease for Categories A and B and Stay for Category D. The dealer audit corpus remains refreshed through 6 November. The v0.14 counterfactual comparison of LTA's two consultation structures is retained, and the primary forecast remains under the existing COE regime.
 
 The common analysis window begins in **October 2015** because earlier policy regimes are less comparable. The latest completed tender currently returned by the official results feed is **{latest_completed_tender}**. Structural forecasts are the primary published model. Dealer, economy and financing variants remain visible research experiments and do not replace it unless they demonstrate repeatable out-of-sample improvement.
 
@@ -1080,6 +1080,7 @@ The original MVP audit found that comma-formatted official numbers could be coer
 - **v0.15:** incorporated the confirmed 21 October 2026 Exercise 2 outcomes, reran every structural, dealer, economy and multi-horizon evaluation, and retargeted the live outlook to November Exercise 1. The next quota remains a disclosed last-completed fallback until LTA identifies the upcoming tender on OneMotoring.
 - **v0.16:** incorporated LTA's announced 4 November quotas (A 1,189; B 959; D 509; E 287), refreshed SGCarMart evidence through 29 October and market/economy cutoffs through 2 November, and rebuilt the direct multi-cycle outlook. Live bids and provisional prices remain excluded.
 - **v0.17:** appended the confirmed 4 November outcomes, recorded the frozen v0.16 prediction and realised errors, reran all structural/dealer/economy/multi-horizon evaluations, retargeted the outlook to November Exercise 2, and refreshed the SGCarMart corpus through 6 November. BYD and Mercedes-Benz coverage status is now explicit.
+- **v0.18:** appended the confirmed 18 November outcomes, recorded the v0.17 pre-bid prediction and realised errors, reran all structural/dealer/economy/multi-horizon evaluations, and retargeted the live outlook to December Exercise 1. All three v0.17 outcome calls were correct, while the larger Cat A and B dollar moves still produced material point-forecast errors.
 """
         )
 

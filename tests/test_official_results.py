@@ -55,6 +55,20 @@ def test_parses_current_final_heading_variant():
     assert len(records) == 5
 
 
+def test_parses_current_result_table_with_pqp_column():
+    with_pqp = FINAL_HTML.replace(
+        "<th>Quota</th><th>QP($)</th>",
+        "<th>Quota</th><th>QP($)</th><th>PQP($)</th>",
+    )
+    for premium in ("133,009", "135001", "93101", "12556", "137890"):
+        with_pqp = with_pqp.replace(
+            f"<td>{premium}</td></tr>", f"<td>{premium}</td><td>120000</td></tr>"
+        )
+    records = parse_one_motoring_final_results(with_pqp)
+    assert records[0]["quota"] == "1195"
+    assert records[0]["premium"] == "133009"
+
+
 def test_reconciles_same_tender_archive_mismatch_and_preserves_metadata():
     final = parse_one_motoring_final_results(FINAL_HTML)
     archived = [dict(final[0], bids_received="1706", _id=123)]

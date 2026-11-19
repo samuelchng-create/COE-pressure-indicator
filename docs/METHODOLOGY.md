@@ -1,4 +1,16 @@
-# v0.17 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+# v0.18 consultation, multi-cycle, tender-timing, probability, dealer and economy methodology
+
+## v0.18 November 2026 Exercise 2 result and forecast audit
+
+The confirmed 18 November result is appended as a new outer-test observation:
+Cat A S$130,100, Cat B S$125,600 and Cat D S$10,489. The v0.17 pre-bid
+forecast is retained in `data/frozen_forecast_log.csv`. Its three-way calls
+were correct for all three categories: Decrease for Categories A and B and
+Stay for Category D. The absolute point errors were S$7,815, S$5,625 and S$94,
+respectively, showing why a correct direction call is not the same as an
+accurate dollar forecast. The live outlook now targets December Exercise 1 and
+uses the disclosed last-completed quota fallback until LTA identifies that
+tender's announced quotas.
 
 ## v0.17 November 2026 Exercise 1 result and frozen-forecast audit
 

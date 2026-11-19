@@ -1,4 +1,4 @@
-# Singapore COE Pressure Indicator — v0.17 November Exercise 1 results refresh
+# Singapore COE Pressure Indicator — v0.18 November Exercise 2 results refresh
 
 An experimental Streamlit tracker for Singapore COE Categories A, B and D. It
 loads official tender-level results, runs leakage-safe expanding-window
@@ -7,6 +7,19 @@ reports direction accuracy, MAE, RMSE and prequential interval coverage.
 
 The app does **not** claim that a Dealer Pressure Index, model probability or
 forecast edge is prospectively calibrated. Negative benchmark results remain visible.
+
+## v0.18 November 2026 Exercise 2 results refresh
+
+- Adds the confirmed 18 November 2026 outcomes: Cat A S$130,100, Cat B
+  S$125,600 and Cat D S$10,489, with official quota and bid totals from LTA.
+- Preserves the v0.17 pre-bid forecast and records its realised error. All
+  three outcome calls were correct: Decrease for Cats A and B and Stay for
+  Cat D. The point errors were S$7,815, S$5,625 and S$94 respectively.
+- Extends the leakage-safe structural, economy, dealer and multi-cycle
+  comparisons by one completed exercise and retargets the live outlook to
+  December Exercise 1.
+- Uses the last completed quota as a visible fallback until OneMotoring
+  identifies the December exercise and publishes its exact quotas.
 
 ## v0.17 November 2026 Exercise 1 results refresh
 
